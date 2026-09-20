@@ -2,7 +2,7 @@
 
 Este proyecto es el ejecutable que inicia la aplicación HTTP.
 
-Actúa como Composition Root para el flujo HTTP.
+Actúa como Composition Root para los flujos HTTP.
 
 ---
 
@@ -26,17 +26,42 @@ conectar ports con implementaciones
 
 Aquí pueden conocerse simultáneamente abstracciones e implementaciones concretas.
 
-Ejemplo:
+Actualmente conecta:
 
 ```text
 IInventoryRepository
-        ↓
-InventoryRepository
+    ↓
+InMemoryInventoryRepository
+
+IRecipeRepository
+    ↓
+InMemoryRecipeRepository
+
+ICraftItemUseCase
+    ↓
+CraftItemHandler
+
+IGetInventoryUseCase
+    ↓
+GetInventoryHandler
 ```
 
-El Host realiza la conexión.
+Application no conoce esas implementaciones concretas.
 
-Application no conoce esa implementación concreta.
+---
+
+## Endpoints ensamblados
+
+```text
+POST /api/crafting/items
+GET  /api/inventories/{playerId}
+```
+
+El Host registra los endpoints, pero la traducción HTTP vive en:
+
+```text
+Grounded.Hexagonal.Adapters.Inbound.Http
+```
 
 ---
 

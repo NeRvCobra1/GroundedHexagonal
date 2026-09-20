@@ -33,12 +33,30 @@ No forman parte de la definición de Arquitectura Hexagonal.
 ```text
 CraftItem/
     ADAPTER-IN-HTTP-CRAFT-001
+
+GetInventory/
+    ADAPTER-IN-HTTP-INVENTORY-001
 ```
 
-Endpoint:
+Endpoints:
 
 ```text
 POST /api/crafting/items
+GET  /api/inventories/{playerId}
+```
+
+Los dos adapters entran por ports de Application diferentes:
+
+```text
+CraftItemEndpoint
+    ↓
+ICraftItemUseCase
+```
+
+```text
+GetInventoryEndpoint
+    ↓
+IGetInventoryUseCase
 ```
 
 ---
@@ -70,50 +88,53 @@ Host implementation details
 
 ---
 
-## HTTP Request vs Application Command
+## Modelos HTTP vs modelos de Application
 
-El adapter utiliza modelos propios del transporte:
+Los adapters pueden definir modelos de transporte como:
 
 ```text
 CraftItemHttpRequest
+CraftItemHttpResponse
+GetInventoryHttpResponse
+InventoryItemHttpResponse
 ```
 
-y los traduce a modelos de Application:
+Estos se traducen hacia o desde modelos de Application como:
 
 ```text
 CraftItemCommand
+CraftItemResult
+GetInventoryQuery
+GetInventoryResult
 ```
 
 La separación es deliberada.
 
-Una modificación del contrato HTTP no debe obligar al caso de uso a convertirse en un modelo de transporte.
+Una modificación del contrato HTTP no debe convertir los modelos de Application en DTOs de transporte.
 
 ---
 
-## HTTP Response vs Application Result
+## Traducción de resultados
 
-Application devuelve:
+Application expresa significado.
 
-```text
-CraftItemResult
-```
+HTTP expresa protocolo.
 
-El adapter traduce ese significado a:
+Ejemplos:
 
 ```text
-HTTP status code
-HTTP response body
-```
-
-Por ejemplo:
-
-```text
-InsufficientIngredients
+CraftItemStatus.InsufficientIngredients
         ↓
 409 Conflict
 ```
 
-Ese `409` sólo tiene significado dentro del adapter HTTP.
+```text
+GetInventoryStatus.InventoryNotFound
+        ↓
+404 Not Found
+```
+
+Esos códigos sólo tienen significado dentro del adapter HTTP.
 
 ---
 
@@ -139,14 +160,14 @@ Esto es configuración específica de .NET y no una decisión de Arquitectura He
 
 ## Qué no debe ocurrir
 
-El endpoint no debe:
+Un endpoint no debe:
 
 ```text
 consultar SQL
 usar DbContext
 conocer InMemoryInventoryRepository
 calcular ingredientes
-modificar Inventory directamente
+modificar directamente Domain salvo mediante el caso de uso correspondiente
 ```
 
 Su frontera termina al invocar el inbound port.

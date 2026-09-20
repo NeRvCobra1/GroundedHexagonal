@@ -1,6 +1,20 @@
 @Grounded.Hexagonal.Host.Api_HostAddress = http://localhost:5193
 
-GET {{Grounded.Hexagonal.Host.Api_HostAddress}}/weatherforecast/
+### GetInventory
+# Con la composición In-Memory vacía por defecto, un GUID no registrado devuelve 404.
+GET {{Grounded.Hexagonal.Host.Api_HostAddress}}/api/inventories/00000000-0000-0000-0000-000000000001
 Accept: application/json
+
+###
+
+### CraftItem
+# Sin datos seed por defecto, los repositorios In-Memory no contienen esta receta/jugador.
+POST {{Grounded.Hexagonal.Host.Api_HostAddress}}/api/crafting/items
+Content-Type: application/json
+
+{
+  "playerId": "00000000-0000-0000-0000-000000000001",
+  "recipeId": "00000000-0000-0000-0000-000000000002"
+}
 
 ###

@@ -4,9 +4,9 @@
 Use Case:
 UC-INVENTORY-001
 
-Current stage:
-Domain read snapshot + Application implemented.
-HTTP adapter not implemented yet.
+Status:
+Implemented end-to-end with an HTTP inbound adapter and the existing
+In-Memory inventory outbound adapter.
 ```
 
 ---
@@ -19,19 +19,37 @@ PlayerId
 
 ---
 
+## Domain read model
+
+`Inventory` expone:
+
+```text
+GetItems()
+```
+
+que devuelve:
+
+```text
+IReadOnlyCollection<InventoryItemQuantity>
+```
+
+El diccionario mutable interno no se expone fuera de la Entity.
+
+---
+
 ## Inbound Port
 
 ```text
 PORT-IN-INVENTORY-001
 ```
 
-C# representation:
+Representación C#:
 
 ```text
 IGetInventoryUseCase
 ```
 
-Implementation:
+Implementación:
 
 ```text
 GetInventoryHandler
@@ -39,86 +57,124 @@ GetInventoryHandler
 
 ---
 
-## Outbound Port
+## Outbound Port reutilizado
 
-The use case reuses:
+El caso de uso reutiliza:
 
 ```text
 PORT-OUT-INVENTORY-001
-```
-
-C# representation:
-
-```text
+    ↓
 IInventoryRepository
 ```
 
-No additional repository abstraction is introduced.
+Implementación concreta actual:
+
+```text
+InMemoryInventoryRepository
+```
+
+No se creó otro repositorio sólo por tratarse de una Query.
 
 ---
 
-## Domain read model
-
-`Inventory` exposes:
+## HTTP Inbound Adapter
 
 ```text
-GetItems()
+ADAPTER-IN-HTTP-INVENTORY-001
 ```
 
-returning:
+Implementación:
 
 ```text
-IReadOnlyCollection<InventoryItemQuantity>
+GetInventoryEndpoint
 ```
 
-This prevents Application from depending on the Entity's mutable dictionary implementation.
-
----
-
-## Application flow
-
-```text
-GetInventoryQuery
-      ↓
-IGetInventoryUseCase
-      ↓
-GetInventoryHandler
-      ↓
-IInventoryRepository
-      ↓
-Inventory.GetItems()
-      ↓
-GetInventoryResult
-```
-
----
-
-## Command vs Query comparison
-
-```text
-CraftItem
-    obtains Inventory
-    modifies Domain state
-    SaveAsync
-
-GetInventory
-    obtains Inventory
-    reads Domain state
-    no SaveAsync
-```
-
-This difference is behavioral.
-
-Both still use the same hexagonal boundaries.
-
----
-
-## Next adapter
-
-The next stage will add an HTTP inbound adapter such as:
+Route:
 
 ```text
 GET /api/inventories/{playerId}
 ```
 
-That route is not part of Application and will be documented separately when implemented.
+Mapping inicial:
+
+```text
+Success
+    → 200 OK
+
+InventoryNotFound
+    → 404 Not Found
+
+Guid.Empty
+    → 400 Bad Request
+```
+
+Un inventario existente sin items sigue siendo un resultado exitoso:
+
+```text
+200 OK
+items: []
+```
+
+---
+
+## Runtime flow
+
+```text
+HTTP GET
+    ↓
+GetInventoryEndpoint
+    ↓
+IGetInventoryUseCase
+    ↓
+GetInventoryHandler
+    ↓
+IInventoryRepository
+    ↓
+InMemoryInventoryRepository
+    ↓
+Inventory.GetItems()
+    ↓
+GetInventoryResult
+    ↓
+HTTP response
+```
+
+---
+
+## Command vs Query
+
+```text
+CraftItem
+    Command
+    obtiene Inventory
+    modifica Domain state
+    SaveAsync
+```
+
+```text
+GetInventory
+    Query
+    obtiene Inventory
+    lee Domain state
+    NO SaveAsync
+```
+
+Ambos atraviesan las mismas fronteras arquitectónicas sin necesitar arquitecturas paralelas.
+
+---
+
+## Tests
+
+```text
+Domain.Tests
+    protege el snapshot de Inventory
+
+Application.Tests
+    protege lectura y ausencia de SaveAsync
+
+Http.IntegrationTests
+    protege 200, inventario vacío, 404 y request inválido
+
+ArchitectureTests
+    protege las fronteras entre Core, adapters y frameworks
+```
