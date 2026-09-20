@@ -78,3 +78,17 @@ test
 Si una decisión sólo existe porque estamos usando .NET/C#, puede documentarse aquí.
 
 Si la decisión seguiría siendo válida en Java, NestJS u otra implementación, probablemente pertenece a la documentación o especificación común.
+
+
+---
+
+## Último caso documentado
+
+`ProcessFoodSpoilage` agrega:
+
+```text
+docs/adr/ADR-NET-0009-worker-trigger-and-clock-adapter.md
+docs/traceability/ProcessFoodSpoilage.md
+```
+
+La documentación distingue explícitamente el rol arquitectónico de un inbound/outbound adapter de las tecnologías concretas `BackgroundService` y `SystemClock`.

@@ -82,6 +82,9 @@ Grounded.Hexagonal.Adapters.Inbound.Worker
 Grounded.Hexagonal.Adapters.Outbound.Persistence
     Implementa ports relacionados con persistencia.
 
+Grounded.Hexagonal.Adapters.Outbound.Time
+    Implementa ports relacionados con capacidades temporales, como IClock.
+
 Grounded.Hexagonal.Host.Api
     Composition Root de la aplicación HTTP.
 
@@ -787,3 +790,30 @@ La especificación describe el comportamiento esperado.
 La arquitectura define las fronteras y responsabilidades.
 
 .NET/C# proporciona una implementación concreta de ambas.
+
+
+---
+
+## Estado de ProcessFoodSpoilage
+
+La implementación .NET incluye ahora el primer caso de uso iniciado sin HTTP:
+
+```text
+FoodSpoilageWorker
+    ↓
+PORT-IN-SPOILAGE-001
+    ↓
+ProcessFoodSpoilageHandler
+    ↓
+Food.AdvanceSpoilage(...)
+```
+
+El tiempo se obtiene mediante:
+
+```text
+PORT-OUT-CLOCK-001
+    → IClock
+    → SystemClock
+```
+
+La decisión está documentada en `ADR-NET-0009`.

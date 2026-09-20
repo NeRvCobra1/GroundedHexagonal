@@ -39,6 +39,8 @@ Grounded.Hexagonal.Adapters.Inbound.Worker
 
 Grounded.Hexagonal.Adapters.Outbound.Persistence
 
+Grounded.Hexagonal.Adapters.Outbound.Time
+
 Grounded.Hexagonal.Host.Api
 
 Grounded.Hexagonal.Host.Worker
@@ -339,6 +341,23 @@ sin propagarlos hacia Application o Domain.
 
 ---
 
+## Grounded.Hexagonal.Adapters.Outbound.Time
+
+Representa capacidades externas relacionadas con el tiempo.
+
+Actualmente implementa:
+
+```text
+PORT-OUT-CLOCK-001
+    IClock
+        ↓
+    SystemClock
+```
+
+Este proyecto existe separado de Persistence porque obtener la hora no es una responsabilidad de almacenamiento.
+
+---
+
 # Hosts
 
 Los Hosts son aplicaciones ejecutables.
@@ -458,7 +477,8 @@ Grounded.Hexagonal.Application
         │
         ├──────── Grounded.Hexagonal.Adapters.Inbound.Worker
         │
-        └──────── Grounded.Hexagonal.Adapters.Outbound.Persistence
+        ├──────── Grounded.Hexagonal.Adapters.Outbound.Persistence
+        └──────── Grounded.Hexagonal.Adapters.Outbound.Time
 ```
 
 Los Hosts se encuentran en el exterior y pueden conocer los proyectos necesarios para realizar la composición.
@@ -535,7 +555,24 @@ Hosts
 
 ---
 
-## Hosts
+### Grounded.Hexagonal.Adapters.Outbound.Time
+
+Representa capacidades externas relacionadas con el tiempo.
+
+Actualmente implementa:
+
+```text
+PORT-OUT-CLOCK-001
+    IClock
+        ↓
+    SystemClock
+```
+
+Este proyecto existe separado de Persistence porque obtener la hora no es una responsabilidad de almacenamiento.
+
+---
+
+# Hosts
 
 Pueden depender de:
 

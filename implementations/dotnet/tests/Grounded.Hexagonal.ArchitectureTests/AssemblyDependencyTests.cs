@@ -1,5 +1,7 @@
 using System.Reflection;
 using Grounded.Hexagonal.Adapters.Inbound.Http.CraftItem;
+using Grounded.Hexagonal.Adapters.Inbound.Worker.FoodSpoilage;
+using Grounded.Hexagonal.Adapters.Outbound.Time;
 using Grounded.Hexagonal.Adapters.Outbound.Persistence.InMemory;
 using Grounded.Hexagonal.Application.UseCases.CraftItem;
 using Grounded.Hexagonal.Domain.Items;
@@ -62,6 +64,30 @@ public sealed class AssemblyDependencyTests
         AssertDoesNotReferenceAny(
             assembly,
             ["Microsoft.AspNetCore"]);
+    }
+
+
+    [Fact]
+    public void Worker_Adapter_Should_Not_Reference_AspNetCore()
+    {
+        var assembly = typeof(FoodSpoilageWorker).Assembly;
+
+        AssertDoesNotReferenceAny(
+            assembly,
+            ["Microsoft.AspNetCore"]);
+    }
+
+    [Fact]
+    public void Time_Adapter_Should_Not_Reference_AspNetCore_Or_EntityFrameworkCore()
+    {
+        var assembly = typeof(SystemClock).Assembly;
+
+        AssertDoesNotReferenceAny(
+            assembly,
+            [
+                "Microsoft.AspNetCore",
+                "Microsoft.EntityFrameworkCore"
+            ]);
     }
 
     private static void AssertDoesNotReferenceAny(

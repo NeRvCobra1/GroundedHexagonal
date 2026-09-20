@@ -1,70 +1,83 @@
 # Grounded.Hexagonal.Host.Worker
 
-Este proyecto es el ejecutable que inicia procesos en background.
-
-Actúa como Composition Root para los flujos iniciados mediante Worker.
+Este proyecto es el Composition Root ejecutable para procesos iniciados en background.
 
 ---
 
-## Responsabilidad
-
-Puede encargarse de:
+## Caso actual
 
 ```text
-Worker Host startup
-Dependency Injection
-configuration
-logging
-registro del inbound worker adapter
-registro de outbound adapters
+UC-SPOILAGE-001
+ProcessFoodSpoilage
+```
+
+Composición:
+
+```text
+FoodSpoilageWorker
+        ↓
+IProcessFoodSpoilageUseCase
+        ↓
+ProcessFoodSpoilageHandler
+        ├── IFoodRepository
+        │       ↓
+        │   InMemoryFoodRepository
+        │
+        └── IClock
+                ↓
+            SystemClock
 ```
 
 ---
 
-## Flujo esperado
+## Responsabilidad del Host
+
+El Host conoce implementaciones concretas porque necesita conectarlas mediante Dependency Injection.
+
+Actualmente registra:
 
 ```text
-Host.Worker
-    ↓
-Inbound Worker Adapter
-    ↓
-Inbound Port
-    ↓
-Application
-    ↓
-Outbound Port
-    ↓
-Persistence Adapter
+IFoodRepository
+    → InMemoryFoodRepository
+
+IClock
+    → SystemClock
+
+IProcessFoodSpoilageUseCase
+    → ProcessFoodSpoilageHandler
+
+IHostedService
+    → FoodSpoilageWorker
+```
+
+También enlaza configuración:
+
+```text
+FoodSpoilage:Interval
+FoodSpoilage:RunImmediately
 ```
 
 ---
 
-## Puede depender de
+## Qué NO hace
+
+El Host no contiene:
 
 ```text
-Application
-Inbound.Worker
-Outbound.Persistence
-```
-
----
-
-## No debe contener
-
-```text
-reglas de negocio
-reglas de spoilage
-persistencia directa
+RULE-SPOILAGE-001
+comparaciones de SpoilsAt
+mutación de Food
+persistencia
 ```
 
 ---
 
 ## Regla principal
 
-El Host inicia y conecta componentes.
+El Host conecta e inicia.
 
-El Worker Adapter dispara el caso de uso.
+El Worker dispara.
 
-Application lo coordina.
+Application coordina.
 
-Domain contiene las reglas.
+Domain decide.

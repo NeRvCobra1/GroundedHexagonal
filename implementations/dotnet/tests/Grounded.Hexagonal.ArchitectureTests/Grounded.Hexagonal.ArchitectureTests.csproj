@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -22,6 +22,8 @@
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Domain\Grounded.Hexagonal.Domain.csproj" />
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Application\Grounded.Hexagonal.Application.csproj" />
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Adapters.Inbound.Http\Grounded.Hexagonal.Adapters.Inbound.Http.csproj" />
+    <ProjectReference Include="..\..\src\Grounded.Hexagonal.Adapters.Inbound.Worker\Grounded.Hexagonal.Adapters.Inbound.Worker.csproj" />
+    <ProjectReference Include="..\..\src\Grounded.Hexagonal.Adapters.Outbound.Time\Grounded.Hexagonal.Adapters.Outbound.Time.csproj" />
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Adapters.Outbound.Persistence\Grounded.Hexagonal.Adapters.Outbound.Persistence.csproj" />
   </ItemGroup>
 

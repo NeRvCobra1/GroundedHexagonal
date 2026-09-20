@@ -3,6 +3,7 @@
     <Project Path="src/Grounded.Hexagonal.Adapters.Inbound.Http/Grounded.Hexagonal.Adapters.Inbound.Http.csproj" />
     <Project Path="src/Grounded.Hexagonal.Adapters.Inbound.Worker/Grounded.Hexagonal.Adapters.Inbound.Worker.csproj" />
     <Project Path="src/Grounded.Hexagonal.Adapters.Outbound.Persistence/Grounded.Hexagonal.Adapters.Outbound.Persistence.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Adapters.Outbound.Time/Grounded.Hexagonal.Adapters.Outbound.Time.csproj" />
     <Project Path="src/Grounded.Hexagonal.Application/Grounded.Hexagonal.Application.csproj" />
     <Project Path="src/Grounded.Hexagonal.Domain/Grounded.Hexagonal.Domain.csproj" />
     <Project Path="src/Grounded.Hexagonal.Host.Api/Grounded.Hexagonal.Host.Api.csproj" />

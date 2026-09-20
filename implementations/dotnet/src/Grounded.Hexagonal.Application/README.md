@@ -291,3 +291,21 @@ Application Test
 Application coordina el negocio, pero no debe convertirse en infraestructura.
 
 Si una clase necesita saber cómo funciona HTTP, EF Core o SQL, probablemente pertenece a un adapter y no a Application.
+
+
+---
+
+## ProcessFoodSpoilage implementado
+
+```text
+PORT-IN-SPOILAGE-001
+    → IProcessFoodSpoilageUseCase
+
+PORT-OUT-FOOD-001
+    → IFoodRepository
+
+PORT-OUT-CLOCK-001
+    → IClock
+```
+
+El Handler usa ambos outbound ports y delega `RULE-SPOILAGE-001` a Domain.

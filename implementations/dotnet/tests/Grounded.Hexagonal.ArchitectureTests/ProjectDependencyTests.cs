@@ -9,6 +9,7 @@ public sealed class ProjectDependencyTests
     private const string InboundHttp = "Grounded.Hexagonal.Adapters.Inbound.Http";
     private const string InboundWorker = "Grounded.Hexagonal.Adapters.Inbound.Worker";
     private const string OutboundPersistence = "Grounded.Hexagonal.Adapters.Outbound.Persistence";
+    private const string OutboundTime = "Grounded.Hexagonal.Adapters.Outbound.Time";
     private const string HostApi = "Grounded.Hexagonal.Host.Api";
     private const string HostWorker = "Grounded.Hexagonal.Host.Worker";
 
@@ -53,6 +54,14 @@ public sealed class ProjectDependencyTests
     }
 
     [Fact]
+    public void OutboundTime_Should_Reference_Only_Application()
+    {
+        AssertProjectReferences(
+            OutboundTime,
+            Application);
+    }
+
+    [Fact]
     public void HostApi_Should_Reference_Only_Its_Composition_Dependencies()
     {
         AssertProjectReferences(
@@ -69,7 +78,8 @@ public sealed class ProjectDependencyTests
             HostWorker,
             Application,
             InboundWorker,
-            OutboundPersistence);
+            OutboundPersistence,
+            OutboundTime);
     }
 
     private static void AssertProjectReferences(

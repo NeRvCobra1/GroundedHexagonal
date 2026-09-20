@@ -68,3 +68,25 @@ Application coordina.
 Domain gobierna las reglas del negocio.
 
 Adapters traducen hacia y desde tecnologías externas.
+
+
+---
+
+## ProcessFoodSpoilage
+
+```text
+UseCases/
+    ProcessFoodSpoilage/
+```
+
+Representa un Command automático iniciado por un Worker.
+
+Su existencia permite comparar:
+
+```text
+HTTP Command
+HTTP Query
+Worker Command
+```
+
+sin cambiar la dirección de las dependencias del Core.

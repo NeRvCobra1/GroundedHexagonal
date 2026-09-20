@@ -6,80 +6,59 @@ Su existencia demuestra que una entrada al sistema no necesita comenzar mediante
 
 ---
 
-## Responsabilidad arquitectónica
-
-Representa:
+## Implementación actual
 
 ```text
-Inbound Adapter
+FoodSpoilage/
+    FoodSpoilageWorker
+    FoodSpoilageWorkerOptions
 ```
 
-utilizando mecanismos como:
+Caso de uso:
 
 ```text
-timer
-scheduler
-background worker
-cron-like execution
+UC-SPOILAGE-001
+ProcessFoodSpoilage
 ```
 
-Ejemplo:
+---
+
+## Flujo
 
 ```text
-Scheduler
-   ↓
-Worker Adapter
-   ↓
-Inbound Port
-   ↓
+BackgroundService / Timer
+          ↓
+FoodSpoilageWorker
+          ↓
+PORT-IN-SPOILAGE-001
+          ↓
 Application
 ```
 
 ---
 
-## Caso principal
+## Responsabilidad
 
-El primer caso asociado será:
-
-```text
-ProcessFoodSpoilage
-```
-
-con Architecture ID:
+Puede contener:
 
 ```text
-UC-SPOILAGE-001
-```
-
----
-
-## Puede contener
-
-```text
-BackgroundService implementations
+scheduling
 timers
-scheduling glue code
-trigger configuration
-mapping hacia inbound ports
+BackgroundService
+configuración del trigger
+logging del ciclo
+traducción hacia inbound ports
 ```
 
----
-
-## No debe contener
+No debe contener:
 
 ```text
 reglas de deterioro
 persistencia directa
-SQL
 DbContext
-reglas de negocio
+SQL
+reglas de dominio
 ```
-
-El worker inicia el proceso.
-
-Domain decide las reglas.
-
-Application coordina el caso de uso.
 
 ---
 
@@ -89,21 +68,35 @@ Puede depender de:
 
 ```text
 Application
+Microsoft.Extensions.Hosting abstractions
 ```
 
 No debe depender de:
 
 ```text
-Outbound Persistence Adapter
+Outbound adapters
 Hosts
+ASP.NET Core
 ```
+
+---
+
+## Diferencia frente a HTTP
+
+```text
+CraftItem / GetInventory
+    HTTP inicia la interacción
+
+ProcessFoodSpoilage
+    un scheduler inicia la interacción
+```
+
+En ambos casos el adapter termina invocando un inbound port de Application.
 
 ---
 
 ## Regla principal
 
-`BackgroundService` es una tecnología de .NET.
+`BackgroundService` es tecnología .NET.
 
-`Inbound Adapter` es el concepto arquitectónico.
-
-No deben confundirse.
+`Inbound Adapter` es el rol arquitectónico.

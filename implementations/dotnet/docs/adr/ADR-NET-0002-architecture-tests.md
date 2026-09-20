@@ -122,3 +122,25 @@ Architecture Tests are an enforcement mechanism.
 They are not the source of architectural truth.
 
 The source remains the documented architectural decisions and the language-neutral specification where applicable.
+
+
+---
+
+## Evolution note
+
+`ADR-NET-0009` later introduced one additional outbound adapter project:
+
+```text
+Grounded.Hexagonal.Adapters.Outbound.Time
+```
+
+Its dependency rule is:
+
+```text
+Outbound.Time
+    → Application
+```
+
+`Host.Worker` may reference it as part of composition.
+
+The original principle of this ADR remains unchanged: each productive project represents a clear responsibility and dependencies continue pointing toward the Core.

@@ -47,6 +47,9 @@ Outbound.Persistence
     → Application
     → Domain
 
+Outbound.Time
+    → Application
+
 Host.Api
     → Application
     → Inbound.Http
@@ -56,6 +59,7 @@ Host.Worker
     → Application
     → Inbound.Worker
     → Outbound.Persistence
+    → Outbound.Time
 ```
 
 Esto impide violaciones como:
@@ -134,6 +138,29 @@ HTTP Adapter
 
 Application
     ✕ Microsoft.AspNetCore.*
+```
+
+---
+
+## Worker Adapter
+
+El Worker adapter puede conocer abstractions de hosting de .NET, pero no ASP.NET Core.
+
+```text
+Inbound.Worker
+    ✕ Microsoft.AspNetCore.*
+```
+
+---
+
+## Time Adapter
+
+El adapter de tiempo debe permanecer independiente de HTTP y EF Core.
+
+```text
+Outbound.Time
+    ✕ Microsoft.AspNetCore.*
+    ✕ Microsoft.EntityFrameworkCore.*
 ```
 
 ---
@@ -220,7 +247,9 @@ ArchitectureTests
     → Domain
     → Application
     → Http Adapter
+    → Worker Adapter
     → Persistence Adapter
+    → Time Adapter
 ```
 
 Eso NO modifica el grafo productivo.
@@ -264,6 +293,9 @@ ADR-NET-0002
 
 ADR-NET-0007
     Core Technology Independence
+
+ADR-NET-0009
+    Worker Trigger and Clock Adapter
 ```
 
 ---

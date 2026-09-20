@@ -343,3 +343,21 @@ infraestructura externa
 Si un concepto deja de tener sentido cuando eliminamos ASP.NET Core, EF Core o la base de datos, probablemente no pertenece al Domain.
 
 Domain representa el negocio, no la tecnología utilizada para ejecutarlo.
+
+
+---
+
+### Food spoilage implementado
+
+El dominio contiene ahora:
+
+```text
+Food/
+    FoodId
+    FoodSpoilageState
+    Food
+```
+
+`Food.AdvanceSpoilage(currentTime)` implementa `RULE-SPOILAGE-001`.
+
+La hora actual llega como argumento; Domain no consulta directamente el reloj del sistema.

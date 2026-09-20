@@ -99,3 +99,24 @@ como:
 ```text
 que sigue respetando sus fronteras arquitectónicas
 ```
+
+
+---
+
+## Worker Integration Tests
+
+`Grounded.Hexagonal.Worker.IntegrationTests` ahora verifica:
+
+```text
+FoodSpoilageWorker
+    ↓
+IProcessFoodSpoilageUseCase
+    ↓
+ProcessFoodSpoilageHandler
+    ↓
+Domain + InMemory persistence
+```
+
+También comprueba que el `BackgroundService` inicia automáticamente el inbound port cuando está configurado con `RunImmediately = true`.
+
+Esto prueba el tercer mecanismo de entrada del laboratorio sin introducir HTTP.

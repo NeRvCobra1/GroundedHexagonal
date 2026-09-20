@@ -64,3 +64,24 @@ Application
 ```
 
 No al adapter que termina implementándola.
+
+
+---
+
+## ProcessFoodSpoilage
+
+El proceso automático agrega dos capacidades externas:
+
+```text
+PORT-OUT-FOOD-001
+    → IFoodRepository
+
+PORT-OUT-CLOCK-001
+    → IClock
+```
+
+`IFoodRepository` desacopla el caso de uso del almacenamiento de alimentos.
+
+`IClock` desacopla el caso de uso del reloj del sistema.
+
+Esto permite que Application trabaje con una hora determinista durante tests y que Domain reciba el tiempo como dato.

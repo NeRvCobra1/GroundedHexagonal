@@ -18,6 +18,10 @@ InMemoryInventoryRepository
 InMemoryRecipeRepository
     implements
     IRecipeRepository
+
+InMemoryFoodRepository
+    implements
+    IFoodRepository
 ```
 
 ---

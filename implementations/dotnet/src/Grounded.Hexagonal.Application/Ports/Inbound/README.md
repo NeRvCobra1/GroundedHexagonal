@@ -54,3 +54,15 @@ sin cambiar el comportamiento del caso de uso.
 La interface C# representa el port.
 
 La interface C# no define qué significa un port en Arquitectura Hexagonal.
+
+
+---
+
+## ProcessFoodSpoilage
+
+```text
+PORT-IN-SPOILAGE-001
+    → IProcessFoodSpoilageUseCase
+```
+
+Este port será invocado por un Worker/Scheduler y demuestra que un inbound port no implica HTTP.

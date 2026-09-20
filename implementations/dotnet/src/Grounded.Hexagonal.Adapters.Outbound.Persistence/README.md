@@ -58,6 +58,9 @@ InMemoryInventoryRepository
 
 InMemoryRecipeRepository
     → PORT-OUT-RECIPE-001
+
+InMemoryFoodRepository
+    → IFoodRepository / PORT-OUT-FOOD-001
 ```
 
 ---
