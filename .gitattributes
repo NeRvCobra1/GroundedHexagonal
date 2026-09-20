@@ -1,0 +1,34 @@
+# Normalize text files in the repository.
+* text=auto
+
+# Source, project and documentation files use LF consistently.
+*.cs      text eol=lf
+*.csproj  text eol=lf
+*.sln     text eol=lf
+*.slnx    text eol=lf
+*.props   text eol=lf
+*.targets text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+*.http    text eol=lf
+*.xml     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.sh      text eol=lf
+
+# Windows-native scripts use CRLF.
+*.ps1     text eol=crlf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# Common binary files must never be line-ending normalized.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.dll  binary
+*.exe  binary
+*.pdb  binary
