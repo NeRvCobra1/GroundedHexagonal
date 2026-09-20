@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Grounded.Hexagonal.Host.Worker-f961223b-a9e9-4f43-bb50-d2cb173c10c4</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grounded.Hexagonal.Application\Grounded.Hexagonal.Application.csproj" />
+    <ProjectReference Include="..\Grounded.Hexagonal.Adapters.Inbound.Worker\Grounded.Hexagonal.Adapters.Inbound.Worker.csproj" />
+    <ProjectReference Include="..\Grounded.Hexagonal.Adapters.Outbound.Persistence\Grounded.Hexagonal.Adapters.Outbound.Persistence.csproj" />
+  </ItemGroup>
+</Project>

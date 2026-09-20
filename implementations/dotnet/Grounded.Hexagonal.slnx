@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Grounded.Hexagonal.Adapters.Inbound.Http/Grounded.Hexagonal.Adapters.Inbound.Http.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Adapters.Inbound.Worker/Grounded.Hexagonal.Adapters.Inbound.Worker.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Adapters.Outbound.Persistence/Grounded.Hexagonal.Adapters.Outbound.Persistence.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Application/Grounded.Hexagonal.Application.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Domain/Grounded.Hexagonal.Domain.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Host.Api/Grounded.Hexagonal.Host.Api.csproj" />
+    <Project Path="src/Grounded.Hexagonal.Host.Worker/Grounded.Hexagonal.Host.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Grounded.Hexagonal.Application.Tests/Grounded.Hexagonal.Application.Tests.csproj" />
+    <Project Path="tests/Grounded.Hexagonal.ArchitectureTests/Grounded.Hexagonal.ArchitectureTests.csproj" />
+    <Project Path="tests/Grounded.Hexagonal.Domain.Tests/Grounded.Hexagonal.Domain.Tests.csproj" />
+    <Project Path="tests/Grounded.Hexagonal.Http.IntegrationTests/Grounded.Hexagonal.Http.IntegrationTests.csproj" />
+    <Project Path="tests/Grounded.Hexagonal.Persistence.IntegrationTests/Grounded.Hexagonal.Persistence.IntegrationTests.csproj" />
+    <Project Path="tests/Grounded.Hexagonal.Worker.IntegrationTests/Grounded.Hexagonal.Worker.IntegrationTests.csproj" />
+  </Folder>
+</Solution>
