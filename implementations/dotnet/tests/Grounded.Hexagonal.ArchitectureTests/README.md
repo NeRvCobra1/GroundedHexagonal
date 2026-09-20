@@ -167,13 +167,26 @@ Outbound.Time
 
 ## Persistence Adapter
 
-El adapter de persistencia no debe adquirir accidentalmente dependencias HTTP.
-
-Por ejemplo:
+El adapter de persistencia no debe adquirir accidentalmente dependencias HTTP:
 
 ```text
 Persistence
     ✕ Microsoft.AspNetCore.*
+```
+
+Ahora sí debe conocer EF Core porque contiene una implementación tecnológica concreta:
+
+```text
+Persistence
+    → Microsoft.EntityFrameworkCore.*
+```
+
+Esto contrasta deliberadamente con:
+
+```text
+Domain
+Application
+    ✕ Microsoft.EntityFrameworkCore.*
 ```
 
 ---
@@ -217,6 +230,20 @@ Debe declarar explícitamente:
 ```
 
 porque es una class library que implementa un adapter utilizando ASP.NET Core.
+
+---
+
+## Persistence Adapter
+
+Debe declarar:
+
+```text
+Microsoft.EntityFrameworkCore.Sqlite
+```
+
+porque EF Core + SQLite es ahora una tecnología concreta del outbound adapter.
+
+La misma dependencia sigue estando prohibida en Domain y Application.
 
 ---
 
@@ -296,6 +323,9 @@ ADR-NET-0007
 
 ADR-NET-0009
     Worker Trigger and Clock Adapter
+
+ADR-NET-0010
+    EF Core + SQLite Persistence Adapter
 ```
 
 ---

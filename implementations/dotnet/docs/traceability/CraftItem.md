@@ -184,3 +184,32 @@ Host.Api
 `CraftItem` demonstrates a state-changing Command crossing the full hexagon.
 
 The use case is implemented without making Domain or Application depend on HTTP or persistence details.
+
+---
+
+## Alternative persistence adapter — EF Core + SQLite
+
+`UC-CRAFT-001` can now execute through either persistence implementation:
+
+```text
+IInventoryRepository
+    → InMemoryInventoryRepository
+    → EfCoreInventoryRepository
+
+IRecipeRepository
+    → InMemoryRecipeRepository
+    → EfCoreRecipeRepository
+```
+
+The following Core types remain unchanged:
+
+```text
+CraftItemHandler
+CraftItemCommand
+CraftItemResult
+Inventory
+Recipe
+```
+
+`Grounded.Hexagonal.Persistence.IntegrationTests` verifies the complete CraftItem flow against a real temporary SQLite database.
+

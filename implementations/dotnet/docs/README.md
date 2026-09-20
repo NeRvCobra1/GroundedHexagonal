@@ -92,3 +92,25 @@ docs/traceability/ProcessFoodSpoilage.md
 ```
 
 La documentación distingue explícitamente el rol arquitectónico de un inbound/outbound adapter de las tecnologías concretas `BackgroundService` y `SystemClock`.
+
+---
+
+## Persistencia relacional
+
+El adapter EF Core + SQLite se documenta mediante:
+
+```text
+docs/adr/ADR-NET-0010-ef-core-sqlite-persistence-adapter.md
+```
+
+y se refleja en la trazabilidad de los tres casos de uso existentes.
+
+La implementación mantiene separados:
+
+```text
+Domain model
+Persistence model
+```
+
+mediante mapeo explícito.
+

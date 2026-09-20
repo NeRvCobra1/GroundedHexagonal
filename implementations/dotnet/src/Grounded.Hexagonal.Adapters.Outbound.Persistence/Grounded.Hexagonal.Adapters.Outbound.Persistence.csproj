@@ -1,8 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Grounded.Hexagonal.Application\Grounded.Hexagonal.Application.csproj" />
     <ProjectReference Include="..\Grounded.Hexagonal.Domain\Grounded.Hexagonal.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
   </ItemGroup>
 
   <PropertyGroup>

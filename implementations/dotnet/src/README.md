@@ -327,14 +327,20 @@ Persistence Adapter
 Database
 ```
 
-El adapter podrá conocer detalles tecnológicos como:
+El proyecto contiene actualmente dos implementaciones:
 
 ```text
-EF Core
+InMemory
+EntityFrameworkCore + SQLite
+```
+
+El adapter EF Core conoce detalles tecnológicos como:
+
+```text
 DbContext
-SQL
-database entities
-persistence mappings
+SQLite
+persistence records
+explicit mappings
 ```
 
 sin propagarlos hacia Application o Domain.

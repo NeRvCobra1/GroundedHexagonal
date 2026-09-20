@@ -68,6 +68,21 @@ public sealed class AssemblyDependencyTests
 
 
     [Fact]
+    public void Persistence_Adapter_Should_Reference_EntityFrameworkCore()
+    {
+        var assembly = typeof(InMemoryInventoryRepository).Assembly;
+
+        var references = GetReferenceNames(assembly);
+
+        Assert.Contains(
+            references,
+            reference => reference.StartsWith(
+                "Microsoft.EntityFrameworkCore",
+                StringComparison.Ordinal));
+    }
+
+
+    [Fact]
     public void Worker_Adapter_Should_Not_Reference_AspNetCore()
     {
         var assembly = typeof(FoodSpoilageWorker).Assembly;

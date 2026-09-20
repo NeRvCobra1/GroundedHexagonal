@@ -10,6 +10,7 @@ public sealed class ProjectTechnologyBoundaryTests
     private const string Domain = "Grounded.Hexagonal.Domain";
     private const string Application = "Grounded.Hexagonal.Application";
     private const string InboundHttp = "Grounded.Hexagonal.Adapters.Inbound.Http";
+    private const string OutboundPersistence = "Grounded.Hexagonal.Adapters.Outbound.Persistence";
 
     [Fact]
     public void Domain_Should_Not_Declare_Package_Or_Framework_References()
@@ -40,6 +41,19 @@ public sealed class ProjectTechnologyBoundaryTests
         Assert.Equal(
             ["Microsoft.AspNetCore.App"],
             frameworkReferences);
+    }
+
+    [Fact]
+    public void Persistence_Adapter_Should_Declare_EfCore_Sqlite_Package()
+    {
+        var document = LoadProject(OutboundPersistence);
+
+        var packageReferences =
+            GetIncludes(document, "PackageReference");
+
+        Assert.Contains(
+            "Microsoft.EntityFrameworkCore.Sqlite",
+            packageReferences);
     }
 
     private static XDocument LoadProject(string projectName)

@@ -11,6 +11,23 @@ public sealed class FoodSpoilageTests
             () => FoodId.From(Guid.Empty));
     }
 
+
+    [Fact]
+    public void Restore_Should_Rehydrate_Persisted_Spoiled_State()
+    {
+        var spoilsAt = new DateTimeOffset(
+            2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
+
+        var food = Domain.Food.Food.Restore(
+            FoodId.New(),
+            spoilsAt,
+            FoodSpoilageState.Spoiled);
+
+        Assert.True(food.IsSpoiled);
+        Assert.Equal(FoodSpoilageState.Spoiled, food.State);
+        Assert.Equal(spoilsAt, food.SpoilsAt);
+    }
+
     [Fact]
     public void AdvanceSpoilage_Should_Keep_Food_Fresh_Before_Spoilage_Time()
     {

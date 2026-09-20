@@ -205,3 +205,26 @@ PORT-OUT-FOOD-001
 ```
 
 Antes de implementar otro lenguaje, estos mismos conceptos deben existir o confirmarse en la especificación independiente del lenguaje para conservar la trazabilidad común.
+
+---
+
+## Alternative persistence adapter — EF Core + SQLite
+
+`PORT-OUT-FOOD-001` now has:
+
+```text
+IFoodRepository
+    ├── InMemoryFoodRepository
+    └── EfCoreFoodRepository
+```
+
+Persisted `Food` state is reconstructed through:
+
+```text
+Food.Restore(...)
+```
+
+so an already spoiled entity is rehydrated without replaying `RULE-SPOILAGE-001`.
+
+A persistence integration test verifies the complete use case against SQLite while `IClock` remains independently replaceable.
+

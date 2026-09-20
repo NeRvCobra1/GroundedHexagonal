@@ -178,3 +178,22 @@ Http.IntegrationTests
 ArchitectureTests
     protege las fronteras entre Core, adapters y frameworks
 ```
+
+---
+
+## Alternative persistence adapter — EF Core + SQLite
+
+`UC-INVENTORY-001` reuses `PORT-OUT-INVENTORY-001`.
+
+That port now has two implementations:
+
+```text
+IInventoryRepository
+    ├── InMemoryInventoryRepository
+    └── EfCoreInventoryRepository
+```
+
+`GetInventoryHandler` does not change when the adapter changes.
+
+A persistence integration test verifies the use case against a real temporary SQLite database.
+

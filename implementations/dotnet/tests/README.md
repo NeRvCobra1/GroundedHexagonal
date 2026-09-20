@@ -120,3 +120,28 @@ Domain + InMemory persistence
 También comprueba que el `BackgroundService` inicia automáticamente el inbound port cuando está configurado con `RunImmediately = true`.
 
 Esto prueba el tercer mecanismo de entrada del laboratorio sin introducir HTTP.
+
+---
+
+## SQLite Persistence Integration Tests
+
+`Grounded.Hexagonal.Persistence.IntegrationTests` prueba ahora dos implementaciones concretas de persistencia:
+
+```text
+InMemory
+EntityFrameworkCore + SQLite
+```
+
+Las pruebas SQLite crean una base temporal real por test y verifican:
+
+```text
+round-trip de Inventory
+round-trip de Recipe
+rehidratación de Food
+CraftItem
+GetInventory
+ProcessFoodSpoilage
+```
+
+Esto demuestra que los mismos casos de uso funcionan con otro outbound adapter sin modificar Application ni Domain.
+

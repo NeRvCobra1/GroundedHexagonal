@@ -33,6 +33,13 @@ Puede depender de:
 ```text
 Application
 Domain
+tecnologías concretas de persistencia
+```
+
+Actualmente utiliza:
+
+```text
+Microsoft.EntityFrameworkCore.Sqlite
 ```
 
 No debe depender de:
@@ -40,6 +47,7 @@ No debe depender de:
 ```text
 Inbound Adapters
 Hosts
+ASP.NET Core
 ```
 
 ---
@@ -47,83 +55,139 @@ Hosts
 ## Implementaciones actuales
 
 ```text
-InMemory/
-```
-
-contiene:
-
-```text
-InMemoryInventoryRepository
-    → PORT-OUT-INVENTORY-001
-
-InMemoryRecipeRepository
-    → PORT-OUT-RECIPE-001
-
-InMemoryFoodRepository
-    → IFoodRepository / PORT-OUT-FOOD-001
-```
-
----
-
-## Evolución prevista
-
-La organización permite agregar posteriormente otras implementaciones:
-
-```text
 Persistence/
 ├── InMemory/
 └── EntityFrameworkCore/
 ```
 
-Ambas podrían implementar los mismos ports.
-
-Por ejemplo:
+### InMemory
 
 ```text
-IInventoryRepository
-      ▲              ▲
-      │              │
-InMemory...     EfCore...
+InMemoryInventoryRepository
+InMemoryRecipeRepository
+InMemoryFoodRepository
 ```
 
-`CraftItemHandler` no tendría que cambiar.
+Mantiene estado únicamente durante la vida del proceso.
+
+### EntityFrameworkCore
+
+```text
+EfCoreInventoryRepository
+EfCoreRecipeRepository
+EfCoreFoodRepository
+```
+
+Persiste el estado mediante:
+
+```text
+EF Core
+    ↓
+SQLite
+```
 
 ---
 
-## Repository
+## El mismo port, dos adapters
 
-En esta implementación existe la separación:
+Ejemplo:
 
 ```text
-Application
-    IInventoryRepository
-        ↓
-        outbound port
-
-Persistence
-    InMemoryInventoryRepository
-        ↓
-        outbound adapter
+                    IInventoryRepository
+                         ▲        ▲
+                         │        │
+              InMemory adapter   EF Core adapter
+                                    │
+                                    ▼
+                                  SQLite
 ```
 
-El contrato pertenece al núcleo.
+`CraftItemHandler` sólo conoce:
 
-La implementación tecnológica pertenece al exterior.
+```text
+IInventoryRepository
+IRecipeRepository
+```
+
+Por eso no cambia al sustituir el mecanismo de persistencia.
+
+---
+
+## Modelos de persistencia
+
+El adapter de EF Core utiliza modelos propios.
+
+No se agregan atributos de EF a las entidades de Domain.
+
+```text
+Domain Inventory
+       ↕ mapper
+InventoryRecord / InventoryItemRecord
+       ↕ EF Core
+SQLite
+```
+
+Esto mantiene separado:
+
+```text
+modelo del negocio
+```
+
+de:
+
+```text
+modelo de almacenamiento
+```
+
+---
+
+## Tests de integración
+
+`Grounded.Hexagonal.Persistence.IntegrationTests` ejecuta los mismos ports contra:
+
+```text
+InMemory
+SQLite real
+```
+
+Para SQLite se crea una base temporal por test.
+
+También se ejecutan flujos reales de:
+
+```text
+CraftItem
+GetInventory
+ProcessFoodSpoilage
+```
+
+utilizando repositories EF Core.
+
+---
+
+## Inicialización vs. migrations
+
+Actualmente el adapter incluye:
+
+```text
+EfCoreDatabaseInitializer
+    → EnsureCreatedAsync
+```
+
+Esto es intencionalmente temporal.
+
+Las migrations se introducirán como un milestone separado para estudiar evolución de schema sin mezclarla con el primer contacto con EF Core.
 
 ---
 
 ## Qué puede contener
 
-Dependiendo de la implementación concreta:
-
 ```text
-in-memory stores
-EF Core
 DbContext
-persistence models
+persistence records
 mappings
-SQL-specific configuration
-repository implementations
+SQLite configuration
+EF Core repositories
+database initialization
 ```
 
 ---
@@ -134,7 +198,7 @@ repository implementations
 HTTP endpoints
 Controllers
 Background workers
-Application use cases
+Application handlers
 Domain business rules
 ```
 
@@ -142,6 +206,6 @@ Domain business rules
 
 ## Regla principal
 
-Application no sabe si sus datos vienen de memoria, SQL, archivos o un servicio externo.
+Application no sabe si sus datos vienen de memoria, SQLite, SQL Server, archivos o un servicio externo.
 
-Los adapters hacen que esas diferencias tecnológicas queden fuera del núcleo.
+Los adapters absorben esas diferencias tecnológicas.

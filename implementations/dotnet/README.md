@@ -81,6 +81,7 @@ Grounded.Hexagonal.Adapters.Inbound.Worker
 
 Grounded.Hexagonal.Adapters.Outbound.Persistence
     Implementa ports relacionados con persistencia.
+    Incluye adapters In-Memory y EF Core + SQLite.
 
 Grounded.Hexagonal.Adapters.Outbound.Time
     Implementa ports relacionados con capacidades temporales, como IClock.

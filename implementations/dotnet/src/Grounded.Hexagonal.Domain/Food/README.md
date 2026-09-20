@@ -83,3 +83,29 @@ Domain sólo necesita comprender el concepto de tiempo, no cómo se obtiene.
 Domain decide **cuándo un alimento está echado a perder**.
 
 No decide **quién ejecuta periódicamente la revisión** ni **de dónde viene la hora actual**.
+
+---
+
+## Rehidratación
+
+`Food.Restore(...)` permite reconstruir una Entity desde estado que ya fue validado y persistido.
+
+Por ejemplo:
+
+```text
+Food persistido:
+    State = Spoiled
+```
+
+debe volver al Domain como:
+
+```text
+Food.State = Spoiled
+```
+
+sin volver a ejecutar artificialmente `AdvanceSpoilage`.
+
+Esta factory no conoce EF Core ni SQLite.
+
+Sólo expresa que el Domain puede ser reconstruido desde un estado válido existente.
+
