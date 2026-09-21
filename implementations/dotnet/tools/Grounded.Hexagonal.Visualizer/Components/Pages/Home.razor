@@ -1,0 +1,505 @@
+@page "/"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@implements IDisposable
+@inject ScenarioCatalog ScenarioCatalog
+@inject SourceSnippetService SourceSnippetService
+
+<PageTitle>Hexagonal Visualizer</PageTitle>
+
+@if (_scenario is null)
+{
+    <section class="empty-state">
+        <h1>No hay escenarios disponibles</h1>
+        <p>Agrega un JSON en <code>Data/Scenarios</code>.</p>
+    </section>
+}
+else
+{
+    var currentStep = CurrentStep;
+
+    <section class="hero">
+        <div>
+            <div class="eyebrow">VISUAL EXECUTION MAP</div>
+            <h1>@_scenario.Name</h1>
+            <p>@_scenario.Description</p>
+        </div>
+
+        <div class="scenario-picker">
+            <label for="scenario">Escenario</label>
+            <select id="scenario" value="@_scenario.Id" @onchange="OnScenarioChangedAsync">
+                @foreach (var scenario in _scenarios)
+                {
+                    <option value="@scenario.Id">@scenario.Name</option>
+                }
+            </select>
+            <span>@_scenario.UseCaseId</span>
+        </div>
+    </section>
+
+    <section class="context-banner">
+        <strong>Cómo leer esta vista:</strong>
+        @_scenario.PlaybackNote
+    </section>
+
+    <section class="playback-toolbar">
+        <div class="playback-actions">
+            <button class="primary-button" @onclick="PlayAsync" disabled="@_isPlaying">
+                ▶ Play
+            </button>
+            <button class="ghost-button" @onclick="Pause" disabled="@(!_isPlaying)">
+                ⏸ Pause
+            </button>
+            <button class="ghost-button" @onclick="PreviousAsync" disabled="@(_selectedIndex <= 0)">
+                ← Back
+            </button>
+            <button class="ghost-button" @onclick="NextAsync" disabled="@(_selectedIndex >= _scenario.Steps.Count - 1)">
+                Step →
+            </button>
+            <button class="ghost-button" @onclick="ResetAsync">
+                ↺ Reset
+            </button>
+        </div>
+
+        <div class="toolbar-status-group">
+            <div class="interactive-status" title="Esta página sólo se muestra cuando el circuito Interactive Server está activo.">
+                <span class="interactive-status-dot"></span>
+                Interactive Server activo
+            </div>
+
+            <div class="step-counter">
+                <strong>Paso @(_selectedIndex + 1)</strong>
+                <span>de @_scenario.Steps.Count</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="workspace-grid">
+        <section class="panel flow-panel">
+            <div class="panel-heading">
+                <div>
+                    <div class="panel-kicker">RUNTIME CALL DIRECTION</div>
+                    <h2>Flujo ejecutándose</h2>
+                </div>
+                <div class="legend-inline">
+                    <span><i class="legend-dot runtime"></i> recorrido</span>
+                    <span><i class="legend-dot selected"></i> paso actual</span>
+                </div>
+            </div>
+
+            <div class="flow-scroll">
+                <div class="flow-canvas">
+                    <svg class="flow-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                            <marker id="runtimeArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+                                <path d="M 0 0 L 8 4 L 0 8 z" class="runtime-arrow-head" />
+                            </marker>
+                        </defs>
+                        @for (var index = 0; index < _scenario.Steps.Count - 1; index++)
+                        {
+                            var fromStep = _scenario.Steps[index];
+                            var toStep = _scenario.Steps[index + 1];
+                            var lineClass = index < _selectedIndex ? "flow-line completed" : "flow-line";
+
+                            <line class="@lineClass"
+                                  x1="@fromStep.Position.X"
+                                  y1="@fromStep.Position.Y"
+                                  x2="@toStep.Position.X"
+                                  y2="@toStep.Position.Y"
+                                  marker-end="url(#runtimeArrow)" />
+                        }
+                    </svg>
+
+                    @for (var index = 0; index < _scenario.Steps.Count; index++)
+                    {
+                        var stepIndex = index;
+                        var step = _scenario.Steps[index];
+
+                        <button class="flow-node @GetStepStateClass(index)"
+                                style="@GetFlowNodeStyle(step)"
+                                title="@step.Title"
+                                @onclick="() => SelectStepFromUiAsync(stepIndex)">
+                            <span class="node-order">@step.Order</span>
+                            <strong>@step.ShortLabel</strong>
+                            <small>@step.Implementation</small>
+                        </button>
+                    }
+
+                    @if (currentStep is not null)
+                    {
+                        <div class="payload-packet"
+                             style="@GetPacketStyle(currentStep)"
+                             aria-label="Payload actual">
+                            <span></span>
+                        </div>
+                        <div class="payload-tag" style="@GetPayloadTagStyle(currentStep)">
+                            @currentStep.Payload.Label
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @if (currentStep is not null)
+        {
+            <aside class="panel inspector-panel">
+                <div class="panel-heading compact">
+                    <div>
+                        <div class="panel-kicker">SELECTED STEP</div>
+                        <h2>@currentStep.Title</h2>
+                    </div>
+                    <span class="architecture-chip">@currentStep.ArchitectureId</span>
+                </div>
+
+                <div class="classification-grid">
+                    <div>
+                        <span>Etapa general</span>
+                        <strong>@currentStep.GeneralStage</strong>
+                    </div>
+                    <div>
+                        <span>Rol hexagonal</span>
+                        <strong>@currentStep.HexRole</strong>
+                    </div>
+                    <div>
+                        <span>Implementación real</span>
+                        <strong>@currentStep.Implementation</strong>
+                    </div>
+                </div>
+
+                <p class="explanation">@currentStep.Explanation</p>
+
+                <div class="direction-note">
+                    <span>Dirección</span>
+                    <p>@currentStep.DirectionNote</p>
+                </div>
+
+                <div class="payload-card">
+                    <div class="payload-heading">
+                        <div>
+                            <span>Payload en este paso</span>
+                            <strong>@currentStep.Payload.Label</strong>
+                        </div>
+                        <code>@currentStep.Payload.Type</code>
+                    </div>
+                    <pre>@currentStep.Payload.Preview</pre>
+                </div>
+            </aside>
+        }
+    </div>
+
+    <div class="lower-grid">
+        <section class="panel code-panel">
+            <div class="panel-heading compact">
+                <div>
+                    <div class="panel-kicker">REAL SOURCE · READ ONLY</div>
+                    <h2>Código relevante</h2>
+                </div>
+            </div>
+
+            @if (_snippet.IsAvailable)
+            {
+                <div class="file-breadcrumb" title="@_snippet.FilePath">
+                    @foreach (var part in GetPathSegments(_snippet.FilePath))
+                    {
+                        <span>@part</span>
+                    }
+                </div>
+
+                <div class="code-window">
+                    @foreach (var line in _snippet.Lines)
+                    {
+                        <div class="code-line">
+                            <span class="line-number">@line.Number</span>
+                            <code>@line.Text</code>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="code-empty">
+                    <strong>Sin snippet C# para este paso.</strong>
+                    <p>@_snippet.Message</p>
+                </div>
+            }
+        </section>
+
+        <section class="panel repository-panel">
+            <div class="panel-heading compact">
+                <div>
+                    <div class="panel-kicker">COMPILE-TIME DEPENDENCY DIRECTION</div>
+                    <h2>Mapa físico de proyectos</h2>
+                </div>
+            </div>
+
+            <p class="repository-help">
+                Estas flechas muestran quién depende de quién en código. No deben confundirse con el recorrido de runtime de arriba.
+            </p>
+
+            <div class="project-map">
+                <svg class="project-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <marker id="dependencyArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                            <path d="M 0 0 L 7 3.5 L 0 7 z" class="dependency-arrow-head" />
+                        </marker>
+                    </defs>
+                    @foreach (var edge in _scenario.ProjectEdges)
+                    {
+                        var fromNode = FindProject(edge.From);
+                        var toNode = FindProject(edge.To);
+
+                        if (fromNode is not null && toNode is not null)
+                        {
+                            <line class="project-line"
+                                  x1="@fromNode.X"
+                                  y1="@fromNode.Y"
+                                  x2="@toNode.X"
+                                  y2="@toNode.Y"
+                                  marker-end="url(#dependencyArrow)" />
+                        }
+                    }
+                </svg>
+
+                @foreach (var project in _scenario.Projects)
+                {
+                    <div class="project-node @(IsProjectActive(project) ? "active" : string.Empty)"
+                         style="@GetProjectStyle(project)">
+                        <strong>@project.ShortName</strong>
+                        <span>@project.Responsibility</span>
+                    </div>
+                }
+            </div>
+
+            @if (currentStep?.Code is not null)
+            {
+                <div class="current-file-card">
+                    <span>Archivo activo</span>
+                    <code>@currentStep.Code.FilePath</code>
+                </div>
+            }
+            else
+            {
+                <div class="current-file-card muted">
+                    <span>Archivo activo</span>
+                    <code>— paso externo / conceptual —</code>
+                </div>
+            }
+        </section>
+    </div>
+
+    <section class="reading-guide">
+        <div>
+            <span class="guide-number">01</span>
+            <strong>Arriba: runtime</strong>
+            <p>Sigue el paquete para ver por dónde pasa la información durante CraftItem.</p>
+        </div>
+        <div>
+            <span class="guide-number">02</span>
+            <strong>Derecha: significado</strong>
+            <p>Relaciona capa general, rol hexagonal y nombre concreto en nuestro C#.</p>
+        </div>
+        <div>
+            <span class="guide-number">03</span>
+            <strong>Abajo: código + archivos</strong>
+            <p>Inspecciona sólo las líneas relevantes y ubica físicamente el proyecto responsable.</p>
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<ArchitectureScenario> _scenarios = [];
+    private ArchitectureScenario? _scenario;
+    private SourceSnippet _snippet = SourceSnippet.Empty("Selecciona un paso.");
+    private int _selectedIndex;
+    private bool _isPlaying;
+    private CancellationTokenSource _playbackCancellation = new();
+
+    private FlowStep? CurrentStep =>
+        _scenario is null || _scenario.Steps.Count == 0
+            ? null
+            : _scenario.Steps[Math.Clamp(_selectedIndex, 0, _scenario.Steps.Count - 1)];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _scenarios = await ScenarioCatalog.GetAllAsync();
+        _scenario = _scenarios.FirstOrDefault();
+
+        if (_scenario is not null && _scenario.Steps.Count > 0)
+        {
+            await SelectStepAsync(0);
+        }
+    }
+
+    private async Task OnScenarioChangedAsync(ChangeEventArgs args)
+    {
+        Pause();
+
+        var scenarioId = args.Value?.ToString();
+        _scenario = _scenarios.FirstOrDefault(
+            scenario => scenario.Id.Equals(
+                scenarioId,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (_scenario is not null && _scenario.Steps.Count > 0)
+        {
+            await SelectStepAsync(0);
+        }
+    }
+
+    private async Task SelectStepFromUiAsync(int index)
+    {
+        Pause();
+        await SelectStepAsync(index);
+    }
+
+    private async Task SelectStepAsync(int index)
+    {
+        if (_scenario is null || _scenario.Steps.Count == 0)
+        {
+            return;
+        }
+
+        _selectedIndex = Math.Clamp(
+            index,
+            0,
+            _scenario.Steps.Count - 1);
+
+        _snippet = await SourceSnippetService.ReadAsync(
+            _scenario.Steps[_selectedIndex].Code);
+    }
+
+    private async Task PlayAsync()
+    {
+        if (_scenario is null ||
+            _scenario.Steps.Count == 0 ||
+            _isPlaying)
+        {
+            return;
+        }
+
+        if (_selectedIndex >= _scenario.Steps.Count - 1)
+        {
+            await SelectStepAsync(0);
+        }
+
+        _playbackCancellation.Dispose();
+        _playbackCancellation = new CancellationTokenSource();
+        var cancellationToken = _playbackCancellation.Token;
+        _isPlaying = true;
+
+        try
+        {
+            while (_isPlaying &&
+                   _scenario is not null &&
+                   _selectedIndex < _scenario.Steps.Count - 1)
+            {
+                await Task.Delay(
+                    TimeSpan.FromMilliseconds(1250),
+                    cancellationToken);
+
+                if (!_isPlaying || cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                await SelectStepAsync(_selectedIndex + 1);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Pause and manual navigation intentionally cancel playback.
+        }
+        finally
+        {
+            _isPlaying = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void Pause()
+    {
+        _isPlaying = false;
+        _playbackCancellation.Cancel();
+    }
+
+    private async Task PreviousAsync()
+    {
+        Pause();
+        await SelectStepAsync(_selectedIndex - 1);
+    }
+
+    private async Task NextAsync()
+    {
+        Pause();
+        await SelectStepAsync(_selectedIndex + 1);
+    }
+
+    private async Task ResetAsync()
+    {
+        Pause();
+        await SelectStepAsync(0);
+    }
+
+    private string GetStepStateClass(int index)
+    {
+        if (index == _selectedIndex)
+        {
+            return "active";
+        }
+
+        return index < _selectedIndex
+            ? "completed"
+            : "upcoming";
+    }
+
+    private static string GetFlowNodeStyle(FlowStep step) =>
+        $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+        $"top:{step.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
+
+    private static string GetPacketStyle(FlowStep step) =>
+        $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+        $"top:{step.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
+
+    private static string GetPayloadTagStyle(FlowStep step)
+    {
+        var top = step.Position.Y < 70
+            ? step.Position.Y + 8
+            : step.Position.Y - 11;
+
+        return
+            $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+            $"top:{top.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
+    }
+
+    private static string GetProjectStyle(ProjectNode project) =>
+        $"left:{project.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+        $"top:{project.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
+
+    private ProjectNode? FindProject(string id) =>
+        _scenario?.Projects.FirstOrDefault(
+            project => project.Id.Equals(
+                id,
+                StringComparison.OrdinalIgnoreCase));
+
+    private bool IsProjectActive(ProjectNode project)
+    {
+        var filePath = CurrentStep?.Code?.FilePath;
+
+        return !string.IsNullOrWhiteSpace(filePath) &&
+               filePath.StartsWith(
+                   project.PathPrefix,
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyList<string> GetPathSegments(string filePath) =>
+        filePath.Split(
+            '/',
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    public void Dispose()
+    {
+        _playbackCancellation.Cancel();
+        _playbackCancellation.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
