@@ -164,18 +164,29 @@ utilizando repositories EF Core.
 
 ---
 
-## Inicialización vs. migrations
+## Inicialización y migrations
 
-Actualmente el adapter incluye:
+El adapter administra el schema mediante EF Core Migrations:
 
 ```text
 EfCoreDatabaseInitializer
-    → EnsureCreatedAsync
+    → MigrateAsync
+    → Database.MigrateAsync()
 ```
 
-Esto es intencionalmente temporal.
+La migración inicial vive en:
 
-Las migrations se introducirán como un milestone separado para estudiar evolución de schema sin mezclarla con el primer contacto con EF Core.
+```text
+EntityFrameworkCore/Migrations/
+```
+
+y crea las tablas del adapter junto con:
+
+```text
+__EFMigrationsHistory
+```
+
+`EnsureCreatedAsync()` ya no se utiliza.
 
 ---
 

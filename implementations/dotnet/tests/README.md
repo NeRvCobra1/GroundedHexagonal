@@ -167,3 +167,29 @@ Host.Worker + Sqlite
 ```
 
 El objetivo no es probar nuevamente las reglas de Domain, sino comprobar el ensamblaje del Composition Root.
+
+
+---
+
+## Migration Integration Tests
+
+Los tests de persistencia también protegen la evolución del schema SQLite:
+
+```text
+base vacía
+    ↓
+MigrateAsync
+    ↓
+InitialCreate
+    ↓
+tablas + __EFMigrationsHistory
+```
+
+También se comprueba que ejecutar `MigrateAsync()` nuevamente sobre una base actualizada sea idempotente.
+
+Esto separa dos preguntas:
+
+```text
+¿los repositories funcionan?
+¿el schema puede construirse/evolucionar correctamente?
+```

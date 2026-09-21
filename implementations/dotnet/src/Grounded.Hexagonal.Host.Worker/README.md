@@ -61,7 +61,7 @@ IFoodRepository
     → SQLite
 ```
 
-Cuando SQLite está activo, el Host inicializa el schema antes de arrancar el proceso en background.
+Cuando SQLite está activo, el Host aplica las EF Core Migrations pendientes antes de arrancar el proceso en background.
 
 ---
 

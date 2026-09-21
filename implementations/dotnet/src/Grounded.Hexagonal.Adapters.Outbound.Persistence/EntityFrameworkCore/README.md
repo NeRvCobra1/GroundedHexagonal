@@ -27,31 +27,7 @@ EfCoreFoodRepository
     PORT-OUT-FOOD-001
 ```
 
-Estas implementaciones conviven con:
-
-```text
-InMemoryInventoryRepository
-InMemoryRecipeRepository
-InMemoryFoodRepository
-```
-
----
-
-## Sustitución de adapter
-
-Application sigue viendo exactamente los mismos ports:
-
-```text
-                 IInventoryRepository
-                    ▲             ▲
-                    │             │
-              InMemory...     EfCore...
-                                  │
-                                  ▼
-                                SQLite
-```
-
-Ni `CraftItemHandler` ni `GetInventoryHandler` saben cuál implementación está detrás del port.
+Estas implementaciones conviven con los adapters In-Memory.
 
 ---
 
@@ -59,7 +35,7 @@ Ni `CraftItemHandler` ni `GetInventoryHandler` saben cuál implementación está
 
 EF Core no mapea directamente las entidades del Domain.
 
-Esta carpeta tiene modelos de persistencia propios:
+Esta carpeta mantiene modelos de persistencia propios:
 
 ```text
 InventoryRecord
@@ -75,7 +51,7 @@ y un mapper explícito:
 DomainPersistenceMapper
 ```
 
-Por lo tanto Domain no contiene:
+Por lo tanto Domain sigue sin contener:
 
 ```text
 [Key]
@@ -88,25 +64,209 @@ navigation properties de EF
 
 ---
 
-## Rehidratación
-
-Leer una base de datos no significa volver a ejecutar reglas de negocio históricas.
-
-Por ejemplo, un `Food` ya persistido como:
+## DbContext
 
 ```text
-Spoiled
+GroundedDbContext
 ```
 
-debe reconstruirse como `Spoiled`.
+pertenece exclusivamente al adapter de persistencia.
 
-Para eso Domain expone:
+Es `public` únicamente porque `dotnet-ef` necesita utilizarlo mediante la infraestructura de design-time.
+
+Sus `DbSet` permanecen `internal` y el Core no referencia este tipo.
+
+Los repositories siguen creando contextos de vida corta por operación.
+
+---
+
+# Migrations
+
+La evolución del schema se administra mediante EF Core Migrations.
 
 ```text
-Food.Restore(...)
+EntityFrameworkCore/
+└── Migrations/
+    ├── 20260920220000_InitialCreate.cs
+    ├── 20260920220000_InitialCreate.Designer.cs
+    └── GroundedDbContextModelSnapshot.cs
 ```
 
-Es una capacidad del modelo de dominio para rehidratar estado válido, no una dependencia de EF Core.
+La migración inicial crea:
+
+```text
+Foods
+Inventories
+InventoryItems
+Recipes
+RecipeIngredients
+__EFMigrationsHistory
+```
+
+`__EFMigrationsHistory` pertenece a EF Core y registra qué migrations ya fueron aplicadas.
+
+---
+
+## Runtime initialization
+
+Cuando un Host selecciona SQLite:
+
+```text
+EfCoreDatabaseInitializer
+    ↓
+Database.MigrateAsync()
+```
+
+`MigrateAsync()`:
+
+```text
+crea una base vacía si es necesario
+consulta __EFMigrationsHistory
+aplica sólo migrations pendientes
+```
+
+Ya no se utiliza:
+
+```text
+EnsureCreatedAsync()
+```
+
+porque `EnsureCreated` evita el sistema de migrations y no es compatible con una evolución normal del schema.
+
+---
+
+## Design-time factory
+
+```text
+GroundedDbContextDesignTimeFactory
+```
+
+existe para las herramientas:
+
+```text
+dotnet ef ...
+```
+
+No es un Application Port.
+
+No participa en los casos de uso runtime.
+
+Su conexión por defecto es:
+
+```text
+Data Source=grounded-hexagonal.design.db
+```
+
+y puede sustituirse mediante:
+
+```text
+GROUNDED_SQLITE_CONNECTION_STRING
+```
+
+---
+
+## Tool local del repositorio
+
+La versión de `dotnet-ef` está fijada en:
+
+```text
+.config/dotnet-tools.json
+```
+
+Por eso, después de clonar el repositorio:
+
+```powershell
+dotnet tool restore
+```
+
+restaura la versión compatible con el proyecto.
+
+---
+
+## Comandos principales
+
+Ejecutados desde:
+
+```text
+implementations/dotnet
+```
+
+Restaurar tool:
+
+```powershell
+dotnet tool restore
+```
+
+Listar migrations:
+
+```powershell
+dotnet ef migrations list `
+  --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
+  --startup-project src/Grounded.Hexagonal.Host.Api
+```
+
+Comprobar si el modelo cambió sin migration:
+
+```powershell
+dotnet ef migrations has-pending-model-changes `
+  --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
+  --startup-project src/Grounded.Hexagonal.Host.Api
+```
+
+Crear una migration futura:
+
+```powershell
+dotnet ef migrations add NombreDeLaMigration `
+  --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
+  --startup-project src/Grounded.Hexagonal.Host.Api `
+  --output-dir EntityFrameworkCore/Migrations
+```
+
+Aplicar migrations manualmente:
+
+```powershell
+dotnet ef database update `
+  --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
+  --startup-project src/Grounded.Hexagonal.Host.Api
+```
+
+---
+
+## Transición desde EnsureCreated
+
+Las bases `.db` creadas en milestones anteriores mediante `EnsureCreatedAsync()` no contienen:
+
+```text
+__EFMigrationsHistory
+```
+
+y no deben reutilizarse como si ya fueran bases migradas.
+
+Para este laboratorio, la transición se hace una sola vez eliminando la base local anterior y dejando que `MigrateAsync()` cree una nueva.
+
+No se elimina ninguna base automáticamente desde el código.
+
+En un sistema real con datos valiosos se diseñaría una estrategia explícita de baseline/migración.
+
+---
+
+## RecipeIngredient.Position
+
+Una `Recipe` puede contener requisitos repetidos para el mismo `ItemId`.
+
+Por eso la clave es:
+
+```text
+RecipeId + Position
+```
+
+en vez de:
+
+```text
+RecipeId + ItemId
+```
+
+Las migrations preservan esa decisión del modelo de persistencia.
 
 ---
 
@@ -118,112 +278,43 @@ Domain utiliza:
 DateTimeOffset
 ```
 
-para representar `SpoilsAt`.
+para `SpoilsAt`.
 
-SQLite tiene limitaciones para ciertas operaciones con `DateTimeOffset`, por lo que este adapter persiste:
+El adapter persiste:
 
 ```text
 SpoilsAtUtc : DateTime
 ```
 
-y realiza la conversión explícita en el boundary de persistencia:
+y convierte explícitamente en el boundary.
 
-```text
-Domain DateTimeOffset
-        ↕
-Persistence DateTime UTC
-```
-
-La decisión pertenece al adapter, no a Domain.
+Esta decisión sigue perteneciendo al adapter y no a Domain.
 
 ---
 
-## RecipeIngredient.Position
+## Tests
 
-Una `Recipe` puede contener requisitos repetidos para el mismo `ItemId`.
-
-Por eso la tabla de ingredientes no usa:
+Los integration tests verifican:
 
 ```text
-RecipeId + ItemId
+migration desde base vacía
+tabla __EFMigrationsHistory
+schema esperado
+idempotencia de MigrateAsync
+repository round trips
+CraftItem
+GetInventory
+ProcessFoodSpoilage
 ```
-
-como clave.
-
-Utiliza:
-
-```text
-RecipeId + Position
-```
-
-Esto conserva exactamente la colección definida por Domain.
-
----
-
-## DbContext
-
-```text
-GroundedDbContext
-```
-
-es `internal`.
-
-El resto de la aplicación no necesita conocerlo.
-
-Los repositories reciben únicamente:
-
-```text
-SqlitePersistenceOptions
-```
-
-y crean contextos de vida corta por operación.
-
----
-
-## Inicialización
-
-Este milestone utiliza deliberadamente:
-
-```text
-Database.EnsureCreatedAsync()
-```
-
-mediante:
-
-```text
-EfCoreDatabaseInitializer
-```
-
-Todavía no se introducen migrations.
-
-La razón es educativa: adapter/mapping y evolución de schema son conceptos distintos y se incorporarán por separado.
-
----
-
-## Seeder
-
-`EfCoreDataSeeder` es una herramienta específica del adapter para cargar datos concretos.
-
-No es un Application Port.
-
-Application nunca necesita una operación:
-
-```text
-SeedRecipe
-```
-
-para ejecutar sus casos de uso normales.
-
-Agregar ese método a `IRecipeRepository` solamente para facilitar tests o bootstrap deformaría el port.
 
 ---
 
 ## Regla principal
 
 ```text
-Ports
-    describen capacidades del Core.
+Domain/Application
+    definen negocio y casos de uso.
 
-EF Core + SQLite
-    son una forma reemplazable de implementar esas capacidades.
+Persistence Adapter
+    decide mapping, EF Core, SQLite y evolución del schema.
 ```

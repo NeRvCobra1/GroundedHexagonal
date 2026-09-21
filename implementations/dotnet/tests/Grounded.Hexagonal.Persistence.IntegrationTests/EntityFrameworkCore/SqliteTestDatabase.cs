@@ -34,7 +34,7 @@ internal sealed class SqliteTestDatabase : IAsyncDisposable
             new EfCoreDatabaseInitializer(
                 persistenceOptions);
 
-        await initializer.EnsureCreatedAsync();
+        await initializer.MigrateAsync();
 
         return database;
     }

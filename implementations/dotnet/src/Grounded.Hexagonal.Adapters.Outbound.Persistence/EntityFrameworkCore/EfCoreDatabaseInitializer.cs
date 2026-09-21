@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Grounded.Hexagonal.Adapters.Outbound.Persistence.EntityFrameworkCore;
 
 /// <summary>
-/// Creates the SQLite schema used by the educational EF Core adapter.
+/// Applies pending EF Core migrations for the SQLite persistence adapter.
 /// </summary>
 /// <remarks>
-/// This milestone intentionally uses EnsureCreated instead of migrations.
-/// Schema migrations will be introduced separately so the concepts remain
-/// visible one at a time.
+/// Runtime migration is convenient for this educational reference project.
+/// Production systems may prefer reviewed SQL scripts or migration bundles,
+/// depending on deployment and database-permission requirements.
 /// </remarks>
 public sealed class EfCoreDatabaseInitializer
 {
@@ -21,13 +21,13 @@ public sealed class EfCoreDatabaseInitializer
             persistenceOptions);
     }
 
-    public async Task EnsureCreatedAsync(
+    public async Task MigrateAsync(
         CancellationToken cancellationToken = default)
     {
         await using var dbContext =
             _dbContextFactory.CreateDbContext();
 
-        await dbContext.Database.EnsureCreatedAsync(
+        await dbContext.Database.MigrateAsync(
             cancellationToken);
     }
 }

@@ -853,3 +853,33 @@ La decisión está documentada en:
 ```text
 docs/adr/ADR-NET-0011-host-configured-persistence-composition.md
 ```
+
+
+---
+
+# EF Core Migrations
+
+La implementación SQLite utiliza EF Core Migrations para evolucionar el schema.
+
+La herramienta `dotnet-ef` está fijada como tool local del repositorio:
+
+```powershell
+dotnet tool restore
+```
+
+El runtime aplica migrations pendientes mediante:
+
+```text
+EfCoreDatabaseInitializer
+    → MigrateAsync
+```
+
+Los detalles y comandos viven en:
+
+```text
+src/Grounded.Hexagonal.Adapters.Outbound.Persistence/
+    EntityFrameworkCore/
+        README.md
+```
+
+Esta preocupación permanece fuera de Domain y Application.

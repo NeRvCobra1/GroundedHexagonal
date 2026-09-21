@@ -56,6 +56,32 @@ public sealed class ProjectTechnologyBoundaryTests
             packageReferences);
     }
 
+
+    [Fact]
+    public void Persistence_Adapter_Should_Keep_EfCore_Design_Private()
+    {
+        var document = LoadProject(OutboundPersistence);
+
+        var designReference =
+            document
+                .Descendants()
+                .Single(
+                    element =>
+                        element.Name.LocalName == "PackageReference" &&
+                        element.Attribute("Include")?.Value ==
+                        "Microsoft.EntityFrameworkCore.Design");
+
+        var privateAssets =
+            designReference
+                .Elements()
+                .Single(
+                    element =>
+                        element.Name.LocalName == "PrivateAssets")
+                .Value;
+
+        Assert.Equal("all", privateAssets);
+    }
+
     private static XDocument LoadProject(string projectName)
     {
         var root = FindImplementationRoot();

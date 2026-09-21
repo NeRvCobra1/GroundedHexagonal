@@ -89,7 +89,7 @@ Cuando `Sqlite` está activo, el Host ejecuta:
 
 ```text
 EfCoreDatabaseInitializer
-    → EnsureCreatedAsync
+    → MigrateAsync
 ```
 
 antes de aceptar tráfico.

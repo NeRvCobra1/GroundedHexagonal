@@ -26,7 +26,7 @@ if (sqlitePersistenceOptions is not null)
         new EfCoreDatabaseInitializer(
             sqlitePersistenceOptions);
 
-    await initializer.EnsureCreatedAsync();
+    await initializer.MigrateAsync();
 }
 
 if (app.Environment.IsDevelopment())

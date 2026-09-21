@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Grounded.Hexagonal.Adapters.Outbound.Persistence.EntityFrameworkCore;
 
-internal sealed class GroundedDbContext : DbContext
+public sealed class GroundedDbContext : DbContext
 {
     public GroundedDbContext(
         DbContextOptions<GroundedDbContext> options)
@@ -11,15 +11,15 @@ internal sealed class GroundedDbContext : DbContext
     {
     }
 
-    public DbSet<InventoryRecord> Inventories => Set<InventoryRecord>();
+    internal DbSet<InventoryRecord> Inventories => Set<InventoryRecord>();
 
-    public DbSet<InventoryItemRecord> InventoryItems => Set<InventoryItemRecord>();
+    internal DbSet<InventoryItemRecord> InventoryItems => Set<InventoryItemRecord>();
 
-    public DbSet<RecipeRecord> Recipes => Set<RecipeRecord>();
+    internal DbSet<RecipeRecord> Recipes => Set<RecipeRecord>();
 
-    public DbSet<RecipeIngredientRecord> RecipeIngredients => Set<RecipeIngredientRecord>();
+    internal DbSet<RecipeIngredientRecord> RecipeIngredients => Set<RecipeIngredientRecord>();
 
-    public DbSet<FoodRecord> Foods => Set<FoodRecord>();
+    internal DbSet<FoodRecord> Foods => Set<FoodRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

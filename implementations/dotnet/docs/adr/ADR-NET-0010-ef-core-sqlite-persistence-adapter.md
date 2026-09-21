@@ -4,6 +4,8 @@
 - Scope: .NET implementation
 - Decision type: Outbound adapter technology
 
+> Schema-initialization details in this ADR are superseded by ADR-NET-0012, which replaces EnsureCreated with EF Core Migrations.
+
 ---
 
 ## Context
