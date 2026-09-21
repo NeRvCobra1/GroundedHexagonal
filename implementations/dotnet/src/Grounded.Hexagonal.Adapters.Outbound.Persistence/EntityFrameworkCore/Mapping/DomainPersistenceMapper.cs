@@ -55,6 +55,25 @@ internal static class DomainPersistenceMapper
             (FoodSpoilageState)record.State);
     }
 
+
+    public static InventoryRecord ToRecord(
+        InventoryAggregate inventory)
+    {
+        return new InventoryRecord
+        {
+            PlayerId = inventory.PlayerId.Value,
+            Items = inventory
+                .GetItems()
+                .Select(item => new InventoryItemRecord
+                {
+                    PlayerId = inventory.PlayerId.Value,
+                    ItemId = item.ItemId.Value,
+                    Quantity = item.Quantity
+                })
+                .ToList()
+        };
+    }
+
     public static RecipeRecord ToRecord(
         Recipe recipe)
     {

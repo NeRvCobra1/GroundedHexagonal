@@ -193,3 +193,26 @@ Esto separa dos preguntas:
 ¿los repositories funcionan?
 ¿el schema puede construirse/evolucionar correctamente?
 ```
+
+
+---
+
+## Persistencia entre reinicios del Host
+
+`Grounded.Hexagonal.Http.IntegrationTests` incluye una prueba de demo SQLite que:
+
+```text
+arranca Host.Api
+    ↓
+Migrate + seed
+    ↓
+CraftItem
+    ↓
+cierra Host
+    ↓
+abre un Host nuevo contra el mismo .db
+    ↓
+comprueba que el inventario modificado persiste
+```
+
+La misma prueba confirma que el seed no restaura el inventario original durante el segundo arranque.

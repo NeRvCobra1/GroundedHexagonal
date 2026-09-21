@@ -161,3 +161,101 @@ reglas de spoilage
 El Host **elige, conecta e inicia**.
 
 No es el lugar donde vive el negocio.
+
+
+---
+
+## Development: SQLite + demo data
+
+La configuración base sigue siendo:
+
+```text
+Persistence:Provider = InMemory
+DemoData:Seed = false
+```
+
+Sin embargo, `appsettings.Development.json` cambia deliberadamente el entorno local a:
+
+```json
+{
+  "Persistence": {
+    "Provider": "Sqlite"
+  },
+  "ConnectionStrings": {
+    "Grounded": "Data Source=grounded-hexagonal.db"
+  },
+  "DemoData": {
+    "Seed": true
+  }
+}
+```
+
+Con el perfil `http` de `launchSettings.json`, `dotnet run` utiliza `Development`.
+
+El arranque queda:
+
+```text
+Host.Api
+    ↓
+selecciona SQLite
+    ↓
+MigrateAsync()
+    ↓
+EfCoreDemoDataSeeder.SeedIfMissingAsync()
+    ↓
+Map endpoints
+    ↓
+Run
+```
+
+El seed utiliza IDs estables para que el laboratorio pueda probarse manualmente:
+
+```text
+Player
+11111111-1111-1111-1111-111111111111
+
+Mint Mace Recipe
+22222222-2222-2222-2222-222222222222
+
+Mint Shard
+33333333-3333-3333-3333-333333333333
+
+Tough Gunk
+44444444-4444-4444-4444-444444444444
+
+Flower Petal
+55555555-5555-5555-5555-555555555555
+
+Mint Mace
+66666666-6666-6666-6666-666666666666
+```
+
+El inventario inicial contiene:
+
+```text
+12 Mint Shards
+5 Tough Gunk
+8 Flower Petals
+```
+
+y la receta consume:
+
+```text
+10 Mint Shards
+5 Tough Gunk
+3 Flower Petals
+```
+
+para producir:
+
+```text
+1 Mint Mace
+```
+
+El seed es idempotente: volver a iniciar el Host no restaura las cantidades originales si el inventario ya existe.
+
+Consulta la guía:
+
+```text
+docs/guides/SQLiteDemo.md
+```

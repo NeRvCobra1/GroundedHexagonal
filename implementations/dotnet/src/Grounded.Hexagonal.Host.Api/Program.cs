@@ -1,6 +1,7 @@
 using Grounded.Hexagonal.Adapters.Inbound.Http.CraftItem;
 using Grounded.Hexagonal.Adapters.Inbound.Http.GetInventory;
 using Grounded.Hexagonal.Adapters.Outbound.Persistence.EntityFrameworkCore;
+using Grounded.Hexagonal.Adapters.Outbound.Persistence.EntityFrameworkCore.DemoData;
 using Grounded.Hexagonal.Application.Ports.Inbound;
 using Grounded.Hexagonal.Application.UseCases.CraftItem;
 using Grounded.Hexagonal.Application.UseCases.GetInventory;
@@ -27,6 +28,15 @@ if (sqlitePersistenceOptions is not null)
             sqlitePersistenceOptions);
 
     await initializer.MigrateAsync();
+
+    if (builder.Configuration.GetValue<bool>("DemoData:Seed"))
+    {
+        var demoDataSeeder =
+            new EfCoreDemoDataSeeder(
+                sqlitePersistenceOptions);
+
+        await demoDataSeeder.SeedIfMissingAsync();
+    }
 }
 
 if (app.Environment.IsDevelopment())

@@ -202,7 +202,7 @@ Listar migrations:
 ```powershell
 dotnet ef migrations list `
   --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
-  --startup-project src/Grounded.Hexagonal.Host.Api
+  --startup-project src/Grounded.Hexagonal.Adapters.Outbound.Persistence
 ```
 
 Comprobar si el modelo cambió sin migration:
@@ -210,7 +210,7 @@ Comprobar si el modelo cambió sin migration:
 ```powershell
 dotnet ef migrations has-pending-model-changes `
   --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
-  --startup-project src/Grounded.Hexagonal.Host.Api
+  --startup-project src/Grounded.Hexagonal.Adapters.Outbound.Persistence
 ```
 
 Crear una migration futura:
@@ -218,7 +218,7 @@ Crear una migration futura:
 ```powershell
 dotnet ef migrations add NombreDeLaMigration `
   --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
-  --startup-project src/Grounded.Hexagonal.Host.Api `
+  --startup-project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
   --output-dir EntityFrameworkCore/Migrations
 ```
 
@@ -227,7 +227,7 @@ Aplicar migrations manualmente:
 ```powershell
 dotnet ef database update `
   --project src/Grounded.Hexagonal.Adapters.Outbound.Persistence `
-  --startup-project src/Grounded.Hexagonal.Host.Api
+  --startup-project src/Grounded.Hexagonal.Adapters.Outbound.Persistence
 ```
 
 ---
@@ -318,3 +318,44 @@ Domain/Application
 Persistence Adapter
     decide mapping, EF Core, SQLite y evolución del schema.
 ```
+
+
+---
+
+## Demo data idempotente
+
+El adapter también contiene un seeder concreto para el laboratorio local:
+
+```text
+EntityFrameworkCore/DemoData/
+├── EfCoreDemoDataIds.cs
+└── EfCoreDemoDataSeeder.cs
+```
+
+El Host puede ejecutarlo después de `MigrateAsync()` cuando:
+
+```text
+DemoData:Seed = true
+```
+
+El seeder crea solamente los registros que todavía no existen.
+
+En particular, **no sobrescribe un inventario demo existente**. Esto permite:
+
+```text
+seed inicial
+    ↓
+CraftItem modifica Inventory
+    ↓
+cerrar proceso
+    ↓
+volver a abrir
+    ↓
+seed detecta Inventory existente
+    ↓
+estado anterior se conserva
+```
+
+El seed es una comodidad concreta del adapter SQLite para desarrollo y demostración.
+
+No es una regla de Domain ni un Application Port.

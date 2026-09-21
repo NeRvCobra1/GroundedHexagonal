@@ -883,3 +883,32 @@ src/Grounded.Hexagonal.Adapters.Outbound.Persistence/
 ```
 
 Esta preocupación permanece fuera de Domain y Application.
+
+
+---
+
+## Laboratorio manual con SQLite
+
+El entorno `Development` del Host.Api utiliza SQLite y datos demo idempotentes para permitir una prueba manual completa de:
+
+```text
+Migrations
+    ↓
+Seed
+    ↓
+GetInventory
+    ↓
+CraftItem
+    ↓
+reinicio del proceso
+    ↓
+estado persistente
+```
+
+Guía:
+
+```text
+docs/guides/SQLiteDemo.md
+```
+
+Los tests continúan usando configuración aislada y no dependen del archivo `.db` local.

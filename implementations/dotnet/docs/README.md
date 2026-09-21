@@ -13,6 +13,7 @@ docs/
 ├── adr/
 ├── architecture/
 ├── diagrams/
+├── guides/
 └── traceability/
 ```
 
@@ -127,3 +128,20 @@ docs/adr/ADR-NET-0011-host-configured-persistence-composition.md
 ```
 
 La configuración concreta vive en los Hosts; Application continúa dependiendo únicamente de sus ports.
+
+
+---
+
+## Demo SQLite persistente
+
+La prueba manual de persistencia local se documenta en:
+
+```text
+docs/guides/SQLiteDemo.md
+```
+
+La decisión de usar seed idempotente en Development está registrada en:
+
+```text
+docs/adr/ADR-NET-0013-idempotent-development-demo-data.md
+```
