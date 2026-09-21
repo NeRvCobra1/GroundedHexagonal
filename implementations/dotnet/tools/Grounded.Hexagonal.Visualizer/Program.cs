@@ -17,6 +17,7 @@ builder.Services
 
 builder.Services.AddSingleton<ScenarioCatalog>();
 builder.Services.AddSingleton<SourceSnippetService>();
+builder.Services.AddSingleton<RepositoryMapService>();
 
 var app = builder.Build();
 

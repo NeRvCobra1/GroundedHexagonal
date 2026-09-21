@@ -130,3 +130,38 @@ The runtime canvas now distinguishes a click from a drag gesture:
 - Text selection is disabled inside the runtime canvas so dragging feels like moving a map instead of selecting labels.
 
 This behavior is visualizer-only and does not affect the productive Hexagonal Architecture projects.
+
+## V3 — Physical Repository Map
+
+V3 adds a second visualization mode without changing the runtime-flow engine:
+
+- **Execution Flow** keeps the V2/V2.5 scenario playback.
+- **Repository Map** scans `implementations/dotnet` read-only and builds a physical hierarchy.
+
+The repository map covers:
+
+```text
+implementations/dotnet
+├── root solution/config files
+├── src
+├── tests
+├── docs
+└── tools
+```
+
+Navigation goes from:
+
+```text
+area → project → folder → file → C# type/method
+```
+
+The active runtime step is linked to the physical map. When the selected flow step references a source file, Repository Map can follow that file and, when detectable, the concrete C# symbol.
+
+### V3 implementation rules
+
+- No `ProjectReference` is added to the productive projects.
+- No instrumentation is added to Domain/Application/Adapters/Hosts.
+- The repository is observed via read-only filesystem access.
+- `bin`, `obj`, `.git`, `.vs` and `node_modules` are excluded.
+- C# symbols are extracted only to support educational navigation; this is not a replacement for Roslyn semantic analysis.
+- The repository snapshot is cached for the lifetime of the visualizer process. Restart the visualizer after changing the physical repository structure.

@@ -72,6 +72,28 @@ else
         </div>
     </section>
 
+    <section class="visualizer-mode-switcher" aria-label="Modo del visualizador">
+        <button class='visualizer-mode-button @(_activeView == "flow" ? "active" : string.Empty)'
+                @onclick="ShowFlowView">
+            <span>▶</span>
+            <div><strong>Execution Flow</strong><small>Runtime + ports + adapters</small></div>
+        </button>
+        <button class='visualizer-mode-button @(_activeView == "repository" ? "active" : string.Empty)'
+                @onclick="ShowRepositoryView">
+            <span>⌘</span>
+            <div><strong>Repository Map</strong><small>Proyecto → carpeta → archivo → símbolo</small></div>
+        </button>
+    </section>
+
+    @if (_activeView == "repository")
+    {
+        <RepositoryExplorer ActiveFilePath="@(currentStep?.Code?.FilePath)"
+                            ActiveSymbol="@(currentStep?.Implementation)"
+                            ScenarioLabel="@_scenario.NavigationLabel"
+                            ActiveStepLabel="@(currentStep?.Title ?? string.Empty)" />
+    }
+    else
+    {
     <section class="context-banner">
         <strong>Cómo leer esta vista:</strong>
         @_scenario.PlaybackNote
@@ -445,12 +467,14 @@ else
             <p>Inspecciona las líneas relevantes y compáralas con la dirección de dependencias entre proyectos.</p>
         </div>
     </section>
+    }
 }
 
 @code {
     private IReadOnlyList<ArchitectureScenario> _scenarios = [];
     private ArchitectureScenario? _scenario;
     private SourceSnippet _snippet = SourceSnippet.Empty("Selecciona un paso.");
+    private string _activeView = "flow";
     private const double MinZoom = 0.72;
     private const double MaxZoom = 1.36;
     private const double ZoomStep = 0.12;
@@ -491,6 +515,15 @@ else
             await SelectStepAsync(0);
         }
     }
+
+    private void ShowFlowView()
+    {
+        _activeView = "flow";
+        _pendingFollow = _followCurrent;
+    }
+
+    private void ShowRepositoryView() =>
+        _activeView = "repository";
 
     private async Task SelectScenarioAsync(string scenarioId)
     {
@@ -535,14 +568,14 @@ else
     {
         try
         {
-            if (firstRender)
+            if (_activeView == "flow")
             {
                 await JSRuntime.InvokeVoidAsync(
                     "hexVisualizer.enableFlowPan",
                     "flowViewport");
             }
 
-            if (!_pendingFollow)
+            if (!_pendingFollow || _activeView != "flow")
             {
                 return;
             }
