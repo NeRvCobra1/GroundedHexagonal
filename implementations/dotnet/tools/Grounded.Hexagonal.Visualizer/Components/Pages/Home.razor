@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject ScenarioCatalog ScenarioCatalog
 @inject SourceSnippetService SourceSnippetService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Hexagonal Visualizer</PageTitle>
 
@@ -76,23 +77,53 @@ else
         @_scenario.PlaybackNote
     </section>
 
+    <section class="role-glossary" aria-label="Leyenda de roles hexagonales">
+        <div class="role-glossary-intro">
+            <span>HEXAGONAL ROLE LEGEND</span>
+            <strong>Qué significa cada color</strong>
+        </div>
+        <div class="role-glossary-items">
+            <div class="role-glossary-item external"><i></i><span><strong>Exterior</strong><small>Algo fuera del hexágono inicia o recibe el flujo.</small></span></div>
+            <div class="role-glossary-item inbound"><i></i><span><strong>Inbound Adapter</strong><small>Traduce HTTP, Worker, CLI, etc. hacia un port.</small></span></div>
+            <div class="role-glossary-item core"><i></i><span><strong>Ports + Application</strong><small>Define capacidades y orquesta el caso de uso.</small></span></div>
+            <div class="role-glossary-item domain"><i></i><span><strong>Domain</strong><small>Contiene la regla de negocio independiente.</small></span></div>
+            <div class="role-glossary-item outbound"><i></i><span><strong>Outbound Adapter</strong><small>Implementa una capacidad que el core necesita afuera.</small></span></div>
+        </div>
+    </section>
+
     <section class="playback-toolbar">
-        <div class="playback-actions">
-            <button class="primary-button" @onclick="PlayAsync" disabled="@_isPlaying">
-                ▶ Play
-            </button>
-            <button class="ghost-button" @onclick="Pause" disabled="@(!_isPlaying)">
-                ⏸ Pause
-            </button>
-            <button class="ghost-button" @onclick="PreviousAsync" disabled="@(_selectedIndex <= 0)">
-                ← Back
-            </button>
-            <button class="ghost-button" @onclick="NextAsync" disabled="@(_selectedIndex >= _scenario.Steps.Count - 1)">
-                Step →
-            </button>
-            <button class="ghost-button" @onclick="ResetAsync">
-                ↺ Reset
-            </button>
+        <div class="toolbar-left">
+            <div class="playback-actions">
+                <button class="primary-button" @onclick="PlayAsync" disabled="@_isPlaying">
+                    ▶ Play
+                </button>
+                <button class="ghost-button" @onclick="Pause" disabled="@(!_isPlaying)">
+                    ⏸ Pause
+                </button>
+                <button class="ghost-button" @onclick="PreviousAsync" disabled="@(_selectedIndex <= 0)">
+                    ← Back
+                </button>
+                <button class="ghost-button" @onclick="NextAsync" disabled="@(_selectedIndex >= _scenario.Steps.Count - 1)">
+                    Step →
+                </button>
+                <button class="ghost-button" @onclick="ResetAsync">
+                    ↺ Reset
+                </button>
+            </div>
+
+            <div class="view-actions" aria-label="Controles de vista">
+                <span class="view-actions-label">Vista</span>
+                <button class="micro-button" @onclick="ZoomOut" disabled="@(_zoom <= MinZoom)" title="Alejar">−</button>
+                <span class="zoom-readout">@GetZoomLabel()</span>
+                <button class="micro-button" @onclick="ZoomIn" disabled="@(_zoom >= MaxZoom)" title="Acercar">+</button>
+                <button class="micro-button" @onclick="ResetZoom" title="Restablecer zoom">Fit</button>
+                <button class="toggle-button @(_focusCurrent ? "active" : string.Empty)" @onclick="ToggleFocusCurrent">
+                    ◎ Focus
+                </button>
+                <button class="toggle-button @(_followCurrent ? "active" : string.Empty)" @onclick="ToggleFollowCurrent">
+                    ⇢ Follow
+                </button>
+            </div>
         </div>
 
         <div class="toolbar-status-group">
@@ -108,6 +139,35 @@ else
         </div>
     </section>
 
+    @if (currentStep is not null)
+    {
+        <section class="payload-journey" aria-label="Transformación del payload">
+            <div class="payload-journey-heading">
+                <span>PAYLOAD TRANSFORMATION</span>
+                <strong>La información cambia de forma al cruzar límites</strong>
+            </div>
+            <div class="payload-journey-track">
+                <div class="journey-state previous @(_selectedIndex == 0 ? "muted" : string.Empty)">
+                    <span>Anterior</span>
+                    <strong>@(PreviousStep?.Payload.Label ?? "Inicio del flujo")</strong>
+                    <code>@(PreviousStep?.Payload.Type ?? "—")</code>
+                </div>
+                <div class="journey-arrow">→</div>
+                <div class="journey-state current @GetPayloadKindClass(currentStep)">
+                    <span>Ahora</span>
+                    <strong>@currentStep.Payload.Label</strong>
+                    <code>@currentStep.Payload.Type</code>
+                </div>
+                <div class="journey-arrow">→</div>
+                <div class="journey-state next @(_selectedIndex >= _scenario.Steps.Count - 1 ? "muted" : string.Empty)">
+                    <span>Siguiente</span>
+                    <strong>@(NextStep?.Payload.Label ?? "Fin del flujo")</strong>
+                    <code>@(NextStep?.Payload.Type ?? "—")</code>
+                </div>
+            </div>
+        </section>
+    }
+
     <div class="workspace-grid">
         <section class="panel flow-panel">
             <div class="panel-heading">
@@ -115,18 +175,22 @@ else
                     <div class="panel-kicker">RUNTIME CALL DIRECTION</div>
                     <h2>Flujo ejecutándose</h2>
                 </div>
-                <div class="legend-inline role-legend">
-                    <span><i class="legend-dot external"></i> exterior</span>
-                    <span><i class="legend-dot inbound"></i> entrada</span>
-                    <span><i class="legend-dot core"></i> core</span>
-                    <span><i class="legend-dot outbound"></i> salida</span>
-                    <span><i class="legend-dot domain"></i> domain</span>
+                <div class="flow-heading-meta">
+                    <div class="legend-inline role-legend">
+                        <span><i class="legend-dot external"></i> exterior</span>
+                        <span><i class="legend-dot inbound"></i> entrada</span>
+                        <span><i class="legend-dot core"></i> core</span>
+                        <span><i class="legend-dot outbound"></i> salida</span>
+                        <span><i class="legend-dot domain"></i> domain</span>
+                    </div>
+                    <span class="pan-hint">✥ Arrastra el fondo para mover el mapa</span>
                 </div>
             </div>
 
-            <div class="flow-scroll">
-                <div class="flow-canvas">
-                    <div class="canvas-caption canvas-caption-top">entrada → core → salida</div>
+            <div class="flow-scroll" id="flowViewport">
+                <div class="flow-zoom-stage" style="@GetFlowStageStyle()">
+                    <div class="flow-canvas @(_focusCurrent ? "focus-current" : string.Empty)" style="@GetFlowCanvasStyle()">
+                    <div class="canvas-caption canvas-caption-top"><strong>START</strong><span>entrada → core → salida</span><strong>END</strong></div>
                     <svg class="flow-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                         <defs>
                             <marker id="runtimeArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
@@ -140,9 +204,9 @@ else
                             var lineClass = index < _selectedIndex ? "flow-line completed" : "flow-line";
 
                             <line class="@lineClass"
-                                  x1="@fromStep.Position.X"
+                                  x1="@GetFlowX(fromStep)"
                                   y1="@fromStep.Position.Y"
-                                  x2="@toStep.Position.X"
+                                  x2="@GetFlowX(toStep)"
                                   y2="@toStep.Position.Y"
                                   marker-end="url(#runtimeArrow)" />
                         }
@@ -153,10 +217,19 @@ else
                         var stepIndex = index;
                         var step = _scenario.Steps[index];
 
-                        <button class="flow-node @GetStepStateClass(index) @GetRoleClass(step)"
+                        <button class="flow-node @GetStepStateClass(index) @GetRoleClass(step) @GetTerminalClass(index)"
                                 style="@GetFlowNodeStyle(step)"
+                                data-flow-step="@stepIndex"
                                 title="@step.Title"
                                 @onclick="() => SelectStepFromUiAsync(stepIndex)">
+                            @if (index == 0)
+                            {
+                                <span class="flow-terminal-badge start">START</span>
+                            }
+                            else if (index == _scenario.Steps.Count - 1)
+                            {
+                                <span class="flow-terminal-badge end">END</span>
+                            }
                             <span class="node-order">@step.Order</span>
                             <span class="node-role">@GetRoleCaption(step)</span>
                             <strong>@step.ShortLabel</strong>
@@ -166,7 +239,7 @@ else
 
                     @if (currentStep is not null)
                     {
-                        <div class="payload-packet"
+                        <div class="payload-packet @GetPayloadKindClass(currentStep)"
                              style="@GetPacketStyle(currentStep)"
                              aria-label="Payload actual">
                             <span></span>
@@ -175,6 +248,7 @@ else
                             @currentStep.Payload.Label
                         </div>
                     }
+                    </div>
                 </div>
             </div>
         </section>
@@ -289,7 +363,7 @@ else
 
                         if (fromNode is not null && toNode is not null)
                         {
-                            <line class="project-line"
+                            <line class="project-line @(IsProjectEdgeActive(edge) ? "active" : string.Empty)"
                                   x1="@fromNode.X"
                                   y1="@fromNode.Y"
                                   x2="@toNode.X"
@@ -323,6 +397,34 @@ else
                     <code>— paso externo / conceptual —</code>
                 </div>
             }
+
+            <div class="source-path-section">
+                <div class="source-path-heading">
+                    <div>
+                        <span>ACTIVE SOURCE PATH</span>
+                        <strong>Del repositorio al símbolo que participa ahora</strong>
+                    </div>
+                    <small>Sin alterar el proyecto observado</small>
+                </div>
+
+                <div class="source-path-map">
+                    @foreach (var pathNode in GetActivePathNodes())
+                    {
+                        <div class="source-path-node @pathNode.Kind">
+                            <span>@GetPathNodeIcon(pathNode.Kind)</span>
+                            <div>
+                                <small>@GetPathNodeCaption(pathNode.Kind)</small>
+                                <strong>@pathNode.Label</strong>
+                            </div>
+                        </div>
+
+                        @if (!pathNode.IsLast)
+                        {
+                            <div class="source-path-connector">→</div>
+                        }
+                    }
+                </div>
+            </div>
         </section>
     </div>
 
@@ -349,14 +451,35 @@ else
     private IReadOnlyList<ArchitectureScenario> _scenarios = [];
     private ArchitectureScenario? _scenario;
     private SourceSnippet _snippet = SourceSnippet.Empty("Selecciona un paso.");
+    private const double MinZoom = 0.72;
+    private const double MaxZoom = 1.36;
+    private const double ZoomStep = 0.12;
+    private const double FlowCanvasWidth = 1120;
+    private const double FlowCanvasHeight = 590;
+    private const double FlowHorizontalOffset = 3.5;
+
     private int _selectedIndex;
     private bool _isPlaying;
+    private bool _focusCurrent;
+    private bool _followCurrent = true;
+    private bool _pendingFollow;
+    private double _zoom = 1.0;
     private CancellationTokenSource _playbackCancellation = new();
 
     private FlowStep? CurrentStep =>
         _scenario is null || _scenario.Steps.Count == 0
             ? null
             : _scenario.Steps[Math.Clamp(_selectedIndex, 0, _scenario.Steps.Count - 1)];
+
+    private FlowStep? PreviousStep =>
+        _scenario is null || _selectedIndex <= 0
+            ? null
+            : _scenario.Steps[_selectedIndex - 1];
+
+    private FlowStep? NextStep =>
+        _scenario is null || _selectedIndex >= _scenario.Steps.Count - 1
+            ? null
+            : _scenario.Steps[_selectedIndex + 1];
 
     protected override async Task OnInitializedAsync()
     {
@@ -404,6 +527,40 @@ else
 
         _snippet = await SourceSnippetService.ReadAsync(
             _scenario.Steps[_selectedIndex].Code);
+
+        _pendingFollow = _followCurrent;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (firstRender)
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "hexVisualizer.enableFlowPan",
+                    "flowViewport");
+            }
+
+            if (!_pendingFollow)
+            {
+                return;
+            }
+
+            _pendingFollow = false;
+
+            await JSRuntime.InvokeVoidAsync(
+                "hexVisualizer.scrollStepIntoView",
+                _selectedIndex);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser closed while the Interactive Server circuit was active.
+        }
+        catch (InvalidOperationException)
+        {
+            // The JS runtime can be unavailable while the component is being disposed.
+        }
     }
 
     private async Task PlayAsync()
@@ -479,6 +636,40 @@ else
         await SelectStepAsync(0);
     }
 
+    private void ZoomIn() =>
+        _zoom = Math.Min(MaxZoom, _zoom + ZoomStep);
+
+    private void ZoomOut() =>
+        _zoom = Math.Max(MinZoom, _zoom - ZoomStep);
+
+    private void ResetZoom() =>
+        _zoom = 1.0;
+
+    private void ToggleFocusCurrent() =>
+        _focusCurrent = !_focusCurrent;
+
+    private void ToggleFollowCurrent()
+    {
+        _followCurrent = !_followCurrent;
+        _pendingFollow = _followCurrent;
+    }
+
+    private string GetZoomLabel() =>
+        $"{Math.Round(_zoom * 100):0}%";
+
+    private string GetFlowStageStyle()
+    {
+        var width = FlowCanvasWidth * _zoom;
+        var height = FlowCanvasHeight * _zoom;
+
+        return
+            $"width:{width.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;" +
+            $"height:{height.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;";
+    }
+
+    private string GetFlowCanvasStyle() =>
+        $"transform:scale({_zoom.ToString(System.Globalization.CultureInfo.InvariantCulture)});";
+
     private string GetStepStateClass(int index)
     {
         if (index == _selectedIndex)
@@ -489,6 +680,24 @@ else
         return index < _selectedIndex
             ? "completed"
             : "upcoming";
+    }
+
+
+    private string GetTerminalClass(int index)
+    {
+        if (_scenario is null || _scenario.Steps.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        if (index == 0)
+        {
+            return "start-node";
+        }
+
+        return index == _scenario.Steps.Count - 1
+            ? "end-node"
+            : string.Empty;
     }
 
     private static string GetRoleClass(FlowStep step)
@@ -533,6 +742,46 @@ else
         return "EXTERNAL";
     }
 
+    private static string GetPayloadKindClass(FlowStep step)
+    {
+        var value = $"{step.Payload.Label} {step.Payload.Type} {step.HexRole}".ToLowerInvariant();
+
+        if (value.Contains("json", StringComparison.Ordinal) ||
+            value.Contains("http", StringComparison.Ordinal))
+        {
+            return "payload-http";
+        }
+
+        if (value.Contains("command", StringComparison.Ordinal) ||
+            value.Contains("query", StringComparison.Ordinal))
+        {
+            return "payload-message";
+        }
+
+        if (value.Contains("sqlite", StringComparison.Ordinal) ||
+            value.Contains("repository", StringComparison.Ordinal) ||
+            value.Contains("dbcontext", StringComparison.Ordinal))
+        {
+            return "payload-storage";
+        }
+
+        if (value.Contains("domain", StringComparison.Ordinal) ||
+            value.Contains("inventory", StringComparison.Ordinal) ||
+            value.Contains("food", StringComparison.Ordinal) ||
+            value.Contains("recipe", StringComparison.Ordinal))
+        {
+            return "payload-domain";
+        }
+
+        if (value.Contains("result", StringComparison.Ordinal) ||
+            value.Contains("response", StringComparison.Ordinal))
+        {
+            return "payload-result";
+        }
+
+        return "payload-generic";
+    }
+
 
     private int GetScenarioNumber(ArchitectureScenario scenario)
     {
@@ -573,12 +822,15 @@ else
             ? scenario.Name
             : scenario.NavigationLabel;
 
+    private static double GetFlowX(FlowStep step) =>
+        Math.Min(96.0, step.Position.X + FlowHorizontalOffset);
+
     private static string GetFlowNodeStyle(FlowStep step) =>
-        $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+        $"left:{GetFlowX(step).ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
         $"top:{step.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
 
     private static string GetPacketStyle(FlowStep step) =>
-        $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+        $"left:{GetFlowX(step).ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
         $"top:{step.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
 
     private static string GetPayloadTagStyle(FlowStep step)
@@ -588,7 +840,7 @@ else
             : step.Position.Y - 11;
 
         return
-            $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
+            $"left:{GetFlowX(step).ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
             $"top:{top.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
     }
 
@@ -611,6 +863,89 @@ else
                    project.PathPrefix,
                    StringComparison.OrdinalIgnoreCase);
     }
+
+    private bool IsProjectEdgeActive(ProjectEdge edge)
+    {
+        var activeProject = _scenario?.Projects.FirstOrDefault(IsProjectActive);
+
+        if (activeProject is null)
+        {
+            return false;
+        }
+
+        return edge.From.Equals(activeProject.Id, StringComparison.OrdinalIgnoreCase) ||
+               edge.To.Equals(activeProject.Id, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IReadOnlyList<ActivePathNode> GetActivePathNodes()
+    {
+        var currentStep = CurrentStep;
+        var filePath = currentStep?.Code?.FilePath;
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return
+            [
+                new ActivePathNode("Exterior / conceptual", "external", true)
+            ];
+        }
+
+        var segments = GetPathSegments(filePath);
+        var nodes = new List<ActivePathNode>();
+
+        for (var index = 0; index < segments.Count; index++)
+        {
+            var segment = segments[index];
+            var isLastFile = index == segments.Count - 1;
+            var kind = index switch
+            {
+                0 => "root",
+                1 => "project",
+                _ when isLastFile => "file",
+                _ => "folder"
+            };
+
+            nodes.Add(new ActivePathNode(segment, kind, false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentStep?.Implementation))
+        {
+            nodes.Add(new ActivePathNode(currentStep.Implementation, "symbol", true));
+        }
+        else if (nodes.Count > 0)
+        {
+            nodes[^1] = new ActivePathNode(nodes[^1].Label, nodes[^1].Kind, true);
+        }
+
+        return nodes;
+    }
+
+    private static string GetPathNodeIcon(string kind) =>
+        kind switch
+        {
+            "root" => "⌂",
+            "project" => "◇",
+            "folder" => "▱",
+            "file" => "▤",
+            "symbol" => "ƒ",
+            _ => "○"
+        };
+
+    private static string GetPathNodeCaption(string kind) =>
+        kind switch
+        {
+            "root" => "root",
+            "project" => "project",
+            "folder" => "folder",
+            "file" => "file",
+            "symbol" => "C# symbol",
+            _ => "outside"
+        };
+
+    private sealed record ActivePathNode(
+        string Label,
+        string Kind,
+        bool IsLast);
 
     private static IReadOnlyList<string> GetPathSegments(string filePath) =>
         filePath.Split(

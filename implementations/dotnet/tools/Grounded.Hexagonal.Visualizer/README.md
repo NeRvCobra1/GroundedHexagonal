@@ -16,9 +16,17 @@ Therefore it intentionally:
 
 This preserves the dependency graph we are trying to study.
 
-## V2 scope
 
-V2 includes the three reference flows:
+### V2.5.1 canvas navigation polish
+
+- Adds extra left breathing room so the first runtime node is never clipped.
+- Adds click-and-drag panning on the flow-canvas background.
+- Adds explicit START and END markers on the first and last runtime nodes.
+- Keeps node clicks reserved for step selection.
+
+## V2.5 scope
+
+V2.5 keeps the three reference flows from V2 and adds a richer navigation/visual layer:
 
 1. `UC-CRAFT-001 / CraftItem` — Command initiated by HTTP and persisted.
 2. `UC-INVENTORY-001 / GetInventory` — Query initiated by HTTP with no state mutation.
@@ -40,6 +48,21 @@ The UI compares each scenario by:
 - active physical project/file.
 
 The playback is an **educational simulation**, not runtime telemetry.
+
+### V2.5 visual tooling
+
+V2.5 adds:
+
+- zoom controls over the runtime canvas;
+- `Focus` mode to dim unrelated steps and emphasize the current boundary;
+- `Follow` mode that keeps the active node visible while playback advances;
+- an animated payload marker whose shape/color changes by payload category;
+- a previous/current/next payload transformation rail;
+- a compact role glossary for Exterior / Inbound / Core / Domain / Outbound;
+- highlighted dependency edges around the active project;
+- a synchronized physical source path: `src → project → folder → file → C# symbol`.
+
+The visualizer still does not instrument or reference the productive projects.
 
 ## Run
 
@@ -96,3 +119,14 @@ The upper graph shows **runtime call direction**.
 The lower project graph shows **compile-time dependency direction**.
 
 They are intentionally separate because runtime calls can travel toward an adapter even while source-code dependencies point back toward a port owned by the core.
+
+## V2.5.2 — click or drag on the runtime map
+
+The runtime canvas now distinguishes a click from a drag gesture:
+
+- A short click on a runtime node selects that step.
+- Moving the pointer more than a small threshold pans the canvas, even when the gesture starts on a node.
+- A completed drag suppresses the synthetic click that browsers emit after pointer-up.
+- Text selection is disabled inside the runtime canvas so dragging feels like moving a map instead of selecting labels.
+
+This behavior is visualizer-only and does not affect the productive Hexagonal Architecture projects.

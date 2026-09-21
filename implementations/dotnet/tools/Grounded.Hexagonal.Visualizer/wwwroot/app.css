@@ -1099,3 +1099,691 @@ button:disabled {
         grid-template-columns: 1fr;
     }
 }
+
+/* ================================================================
+   V2.5 · Focus, zoom, payload journey and physical source path
+   ================================================================ */
+
+.role-glossary {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 3.3fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(13, 30, 28, 0.94), rgba(9, 24, 22, 0.78));
+}
+
+.role-glossary-intro {
+    display: grid;
+    align-content: center;
+    gap: 0.24rem;
+}
+
+.role-glossary-intro span,
+.source-path-heading span,
+.payload-journey-heading span,
+.view-actions-label {
+    color: var(--muted);
+    font-size: 0.59rem;
+    font-weight: 850;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.role-glossary-intro strong {
+    font-size: 0.82rem;
+}
+
+.role-glossary-items {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 0.48rem;
+}
+
+.role-glossary-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.58rem 0.62rem;
+    border: 1px solid rgba(162, 224, 210, 0.09);
+    border-radius: 0.72rem;
+    background: rgba(255, 255, 255, 0.018);
+}
+
+.role-glossary-item > i {
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: 0.2rem;
+    border-radius: 999px;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.025);
+}
+
+.role-glossary-item > span {
+    display: grid;
+    gap: 0.16rem;
+    min-width: 0;
+}
+
+.role-glossary-item strong {
+    font-size: 0.68rem;
+    white-space: nowrap;
+}
+
+.role-glossary-item small {
+    color: var(--muted);
+    font-size: 0.58rem;
+    line-height: 1.35;
+}
+
+.role-glossary-item.external > i { background: var(--amber); }
+.role-glossary-item.inbound > i { background: var(--cyan); }
+.role-glossary-item.core > i { background: var(--mint); }
+.role-glossary-item.outbound > i { background: var(--coral); }
+.role-glossary-item.domain > i { background: var(--violet); }
+
+.toolbar-left {
+    display: grid;
+    gap: 0.58rem;
+}
+
+.view-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+}
+
+.view-actions-label {
+    margin-right: 0.18rem;
+}
+
+.micro-button,
+.toggle-button {
+    min-height: 1.9rem;
+    padding: 0.28rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 0.56rem;
+    color: #c8d7d3;
+    background: rgba(255, 255, 255, 0.024);
+    cursor: pointer;
+    transition: 150ms ease;
+}
+
+.micro-button {
+    min-width: 2rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.toggle-button {
+    font-size: 0.64rem;
+    font-weight: 760;
+}
+
+.micro-button:hover:not(:disabled),
+.toggle-button:hover:not(:disabled),
+.toggle-button.active {
+    border-color: rgba(143, 240, 203, 0.4);
+    background: rgba(143, 240, 203, 0.075);
+}
+
+.toggle-button.active {
+    color: var(--mint);
+    box-shadow: inset 0 0 0 1px rgba(143, 240, 203, 0.06);
+}
+
+.zoom-readout {
+    min-width: 2.8rem;
+    color: var(--mint);
+    font-size: 0.64rem;
+    font-weight: 850;
+    text-align: center;
+}
+
+.payload-journey {
+    display: grid;
+    grid-template-columns: minmax(190px, 0.8fr) minmax(0, 3.2fr);
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid rgba(246, 199, 109, 0.16);
+    border-radius: 1rem;
+    background:
+        linear-gradient(90deg, rgba(246, 199, 109, 0.04), transparent 34%),
+        rgba(13, 30, 28, 0.72);
+}
+
+.payload-journey-heading {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.payload-journey-heading strong {
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.payload-journey-track {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr) auto minmax(0, 1fr);
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.journey-state {
+    display: grid;
+    gap: 0.16rem;
+    min-width: 0;
+    padding: 0.58rem 0.64rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.journey-state > span {
+    color: var(--muted);
+    font-size: 0.55rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.journey-state strong,
+.journey-state code {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.journey-state strong {
+    font-size: 0.72rem;
+}
+
+.journey-state code {
+    color: var(--muted);
+    font-size: 0.57rem;
+}
+
+.journey-state.current {
+    border-color: rgba(246, 199, 109, 0.45);
+    background: rgba(246, 199, 109, 0.065);
+    box-shadow: 0 0 0 3px rgba(246, 199, 109, 0.035);
+}
+
+.journey-state.current strong {
+    color: var(--amber);
+}
+
+.journey-state.current.payload-http { border-color: rgba(115, 217, 238, 0.5); }
+.journey-state.current.payload-http strong { color: var(--cyan); }
+.journey-state.current.payload-message { border-color: rgba(143, 240, 203, 0.5); }
+.journey-state.current.payload-message strong { color: var(--mint); }
+.journey-state.current.payload-storage { border-color: rgba(255, 141, 120, 0.5); }
+.journey-state.current.payload-storage strong { color: var(--coral); }
+.journey-state.current.payload-domain { border-color: rgba(197, 167, 255, 0.5); }
+.journey-state.current.payload-domain strong { color: var(--violet); }
+.journey-state.current.payload-result { border-color: rgba(246, 199, 109, 0.5); }
+
+.journey-state.muted {
+    opacity: 0.42;
+}
+
+.journey-arrow {
+    color: rgba(143, 240, 203, 0.48);
+    font-weight: 900;
+}
+
+.flow-zoom-stage {
+    position: relative;
+    flex: none;
+    transition: width 220ms ease, height 220ms ease;
+}
+
+.flow-canvas {
+    width: 1120px;
+    min-width: 1120px;
+    height: 590px;
+    transform-origin: top left;
+    transition: transform 220ms ease;
+}
+
+.flow-canvas.focus-current .flow-node:not(.active) {
+    opacity: 0.2;
+    filter: saturate(0.45);
+}
+
+.flow-canvas.focus-current .flow-node.completed:not(.active) {
+    opacity: 0.34;
+}
+
+.flow-canvas.focus-current .flow-line {
+    opacity: 0.2;
+}
+
+.flow-canvas.focus-current .flow-line.completed {
+    opacity: 0.46;
+}
+
+.flow-canvas.focus-current .flow-node.active {
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow:
+        0 0 0 5px rgba(143, 240, 203, 0.12),
+        0 0 40px rgba(66, 214, 164, 0.18),
+        0 18px 40px rgba(0, 0, 0, 0.42);
+}
+
+.payload-packet {
+    isolation: isolate;
+}
+
+.payload-packet::before,
+.payload-packet::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.payload-packet::before {
+    width: 42px;
+    height: 42px;
+    border: 1px solid currentColor;
+    opacity: 0.18;
+    animation: payload-pulse 1.8s ease-out infinite;
+}
+
+.payload-packet::after {
+    width: 7px;
+    height: 7px;
+    background: rgba(6, 27, 22, 0.78);
+}
+
+.payload-packet.payload-http {
+    color: var(--cyan);
+    background: var(--cyan);
+    border-radius: 50%;
+}
+
+.payload-packet.payload-message {
+    color: var(--mint);
+    background: var(--mint);
+    border-radius: 6px;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.payload-packet.payload-message > span {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.payload-packet.payload-storage {
+    color: var(--coral);
+    background: var(--coral);
+    border-radius: 4px 4px 9px 9px;
+}
+
+.payload-packet.payload-domain {
+    color: var(--violet);
+    background: var(--violet);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    border-radius: 0;
+}
+
+.payload-packet.payload-result {
+    color: var(--amber);
+    background: var(--amber);
+    border-radius: 999px;
+    width: 27px;
+}
+
+.payload-packet.payload-generic {
+    color: var(--amber);
+}
+
+@keyframes payload-pulse {
+    0% { transform: translate(-50%, -50%) scale(0.55); opacity: 0.26; }
+    70%, 100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+}
+
+.flow-line.completed {
+    animation: completed-line-glow 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes completed-line-glow {
+    from { stroke-opacity: 0.65; }
+    to { stroke-opacity: 1; }
+}
+
+.source-path-section {
+    margin: 0.9rem 1rem 0;
+    padding: 0.85rem;
+    border: 1px solid rgba(143, 240, 203, 0.1);
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.13);
+}
+
+.source-path-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.source-path-heading > div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.source-path-heading strong {
+    font-size: 0.76rem;
+}
+
+.source-path-heading small {
+    color: var(--muted);
+    font-size: 0.6rem;
+}
+
+.source-path-map {
+    display: flex;
+    align-items: stretch;
+    gap: 0.38rem;
+    overflow-x: auto;
+    padding: 0.15rem 0 0.35rem;
+}
+
+.source-path-node {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 112px;
+    max-width: 190px;
+    padding: 0.54rem 0.58rem;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    background: rgba(13, 30, 28, 0.82);
+}
+
+.source-path-node > span {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: 0.48rem;
+    color: var(--mint);
+    background: rgba(143, 240, 203, 0.075);
+    font-size: 0.75rem;
+    font-weight: 900;
+}
+
+.source-path-node > div {
+    min-width: 0;
+    display: grid;
+    gap: 0.1rem;
+}
+
+.source-path-node small {
+    color: var(--muted);
+    font-size: 0.48rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.source-path-node strong {
+    overflow: hidden;
+    color: #d7e5e1;
+    font-size: 0.62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.source-path-node.project {
+    border-color: rgba(115, 217, 238, 0.22);
+}
+
+.source-path-node.project > span {
+    color: var(--cyan);
+    background: rgba(115, 217, 238, 0.075);
+}
+
+.source-path-node.file {
+    border-color: rgba(246, 199, 109, 0.22);
+}
+
+.source-path-node.file > span {
+    color: var(--amber);
+    background: rgba(246, 199, 109, 0.075);
+}
+
+.source-path-node.symbol {
+    min-width: 150px;
+    border-color: rgba(197, 167, 255, 0.35);
+    background: rgba(197, 167, 255, 0.055);
+}
+
+.source-path-node.symbol > span {
+    color: var(--violet);
+    background: rgba(197, 167, 255, 0.09);
+}
+
+.source-path-node.external {
+    border-color: rgba(246, 199, 109, 0.22);
+}
+
+.source-path-connector {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: rgba(143, 240, 203, 0.38);
+    font-size: 0.75rem;
+}
+
+@media (max-width: 1280px) {
+    .role-glossary {
+        grid-template-columns: 1fr;
+    }
+
+    .role-glossary-items {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .payload-journey {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .role-glossary-items {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .payload-journey-track {
+        grid-template-columns: 1fr;
+    }
+
+    .journey-arrow {
+        transform: rotate(90deg);
+        justify-self: center;
+    }
+
+    .source-path-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 760px) {
+    .role-glossary-items {
+        grid-template-columns: 1fr;
+    }
+
+    .toolbar-left,
+    .view-actions {
+        width: 100%;
+    }
+
+    .view-actions-label {
+        width: 100%;
+    }
+}
+
+.project-line {
+    transition: stroke 180ms ease, opacity 180ms ease;
+}
+
+.project-line.active {
+    stroke: rgba(143, 240, 203, 0.85);
+    stroke-width: 0.72;
+    filter: drop-shadow(0 0 3px rgba(143, 240, 203, 0.32));
+}
+
+/* V2.5.1 · runtime canvas pan + clearer flow boundaries */
+.flow-heading-meta {
+    display: grid;
+    justify-items: end;
+    gap: 0.45rem;
+}
+
+.pan-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: rgba(143, 240, 203, 0.72);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.flow-scroll {
+    cursor: grab;
+    scrollbar-color: rgba(143, 240, 203, 0.28) rgba(0, 0, 0, 0.12);
+    scrollbar-width: thin;
+}
+
+.flow-scroll.is-panning {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.flow-scroll.is-panning .flow-canvas {
+    pointer-events: none;
+}
+
+.flow-scroll button {
+    cursor: pointer;
+}
+
+.canvas-caption-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.canvas-caption-top strong {
+    padding: 0.17rem 0.38rem;
+    border-radius: 999px;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+.canvas-caption-top strong:first-child {
+    color: #06241c;
+    background: var(--mint);
+}
+
+.canvas-caption-top strong:last-child {
+    color: #291a05;
+    background: var(--amber);
+}
+
+.flow-node.start-node {
+    border-color: rgba(143, 240, 203, 0.58);
+    box-shadow: inset 3px 0 0 rgba(143, 240, 203, 0.8), 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.flow-node.end-node {
+    border-color: rgba(246, 199, 109, 0.58);
+    box-shadow: inset -3px 0 0 rgba(246, 199, 109, 0.82), 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.flow-node.start-node.active {
+    box-shadow:
+        inset 3px 0 0 rgba(143, 240, 203, 0.95),
+        0 0 0 4px rgba(143, 240, 203, 0.09),
+        0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.flow-node.end-node.active {
+    box-shadow:
+        inset -3px 0 0 rgba(246, 199, 109, 0.95),
+        0 0 0 4px rgba(246, 199, 109, 0.09),
+        0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.flow-terminal-badge {
+    position: absolute;
+    top: -1.48rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-grid;
+    place-items: center;
+    min-width: 3.15rem;
+    min-height: 1.05rem;
+    padding: 0.16rem 0.42rem;
+    border-radius: 999px;
+    font-size: 0.5rem;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+}
+
+.flow-terminal-badge.start {
+    color: #06241c;
+    background: var(--mint);
+    border: 1px solid rgba(143, 240, 203, 0.75);
+}
+
+.flow-terminal-badge.end {
+    color: #291a05;
+    background: var(--amber);
+    border: 1px solid rgba(246, 199, 109, 0.78);
+}
+
+@media (max-width: 900px) {
+    .flow-heading-meta {
+        justify-items: start;
+    }
+}
+
+/* V2.5.2 · robust click-or-drag canvas interaction */
+.flow-scroll,
+.flow-scroll .flow-canvas,
+.flow-scroll .flow-node,
+.flow-scroll .flow-node * {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.flow-scroll {
+    touch-action: pan-y;
+    overscroll-behavior-x: contain;
+}
+
+.flow-scroll .flow-node {
+    -webkit-user-drag: none;
+}
+
+.flow-scroll.is-panning,
+.flow-scroll.is-panning * {
+    cursor: grabbing !important;
+}
