@@ -213,3 +213,16 @@ Recipe
 
 `Grounded.Hexagonal.Persistence.IntegrationTests` verifies the complete CraftItem flow against a real temporary SQLite database.
 
+
+
+---
+
+## Host composition
+
+The concrete persistence adapter is selected outside Application by the executable Host.
+
+```text
+Persistence:Provider = InMemory | Sqlite
+```
+
+Therefore the traced use case keeps the same ports and handler while the Composition Root changes the concrete implementation.

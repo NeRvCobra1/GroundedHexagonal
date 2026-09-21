@@ -114,3 +114,16 @@ Persistence model
 
 mediante mapeo explícito.
 
+
+
+---
+
+## Composition Root configurable
+
+La selección de persistencia `InMemory` o `Sqlite` por Host se documenta en:
+
+```text
+docs/adr/ADR-NET-0011-host-configured-persistence-composition.md
+```
+
+La configuración concreta vive en los Hosts; Application continúa dependiendo únicamente de sus ports.

@@ -1,13 +1,18 @@
 using Grounded.Hexagonal.Adapters.Inbound.Worker.FoodSpoilage;
-using Grounded.Hexagonal.Adapters.Outbound.Persistence.InMemory;
+using Grounded.Hexagonal.Adapters.Outbound.Persistence.EntityFrameworkCore;
 using Grounded.Hexagonal.Adapters.Outbound.Time;
 using Grounded.Hexagonal.Application.Ports.Inbound;
 using Grounded.Hexagonal.Application.Ports.Outbound;
 using Grounded.Hexagonal.Application.UseCases.ProcessFoodSpoilage;
+using Grounded.Hexagonal.Host.Worker.Composition;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton<IFoodRepository, InMemoryFoodRepository>();
+var sqlitePersistenceOptions =
+    PersistenceComposition.AddConfiguredPersistence(
+        builder.Services,
+        builder.Configuration);
+
 builder.Services.AddSingleton<IClock, SystemClock>();
 
 builder.Services.AddTransient<
@@ -20,4 +25,14 @@ builder.Services.Configure<FoodSpoilageWorkerOptions>(
 builder.Services.AddHostedService<FoodSpoilageWorker>();
 
 var host = builder.Build();
-host.Run();
+
+if (sqlitePersistenceOptions is not null)
+{
+    var initializer =
+        new EfCoreDatabaseInitializer(
+            sqlitePersistenceOptions);
+
+    await initializer.EnsureCreatedAsync();
+}
+
+await host.RunAsync();

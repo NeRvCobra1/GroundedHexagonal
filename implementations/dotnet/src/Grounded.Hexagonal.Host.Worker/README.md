@@ -11,7 +11,7 @@ UC-SPOILAGE-001
 ProcessFoodSpoilage
 ```
 
-Composición:
+Composición lógica:
 
 ```text
 FoodSpoilageWorker
@@ -20,41 +20,76 @@ IProcessFoodSpoilageUseCase
         ↓
 ProcessFoodSpoilageHandler
         ├── IFoodRepository
-        │       ↓
-        │   InMemoryFoodRepository
-        │
         └── IClock
-                ↓
-            SystemClock
 ```
 
 ---
 
-## Responsabilidad del Host
+## Selección de persistencia
 
-El Host conoce implementaciones concretas porque necesita conectarlas mediante Dependency Injection.
+El Host decide qué implementación concreta conectar a:
 
-Actualmente registra:
+```text
+IFoodRepository
+```
+
+mediante:
+
+```text
+Persistence:Provider
+```
+
+Valores soportados:
+
+```text
+InMemory
+Sqlite
+```
+
+### InMemory
 
 ```text
 IFoodRepository
     → InMemoryFoodRepository
-
-IClock
-    → SystemClock
-
-IProcessFoodSpoilageUseCase
-    → ProcessFoodSpoilageHandler
-
-IHostedService
-    → FoodSpoilageWorker
 ```
 
-También enlaza configuración:
+### Sqlite
+
+```text
+IFoodRepository
+    → EfCoreFoodRepository
+    → SQLite
+```
+
+Cuando SQLite está activo, el Host inicializa el schema antes de arrancar el proceso en background.
+
+---
+
+## Clock
+
+Independientemente de la persistencia:
+
+```text
+IClock
+    → SystemClock
+```
+
+El tiempo sigue siendo otro outbound adapter y no se mezcla con persistencia.
+
+---
+
+## Worker configuration
 
 ```text
 FoodSpoilage:Interval
 FoodSpoilage:RunImmediately
+```
+
+Persistencia:
+
+```text
+Persistence:Provider
+ConnectionStrings:Grounded
 ```
 
 ---
@@ -67,7 +102,8 @@ El Host no contiene:
 RULE-SPOILAGE-001
 comparaciones de SpoilsAt
 mutación de Food
-persistencia
+queries SQL
+mapeo EF Core
 ```
 
 ---

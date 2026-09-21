@@ -2,7 +2,7 @@
 
 Este proyecto es el ejecutable que inicia la aplicación HTTP.
 
-Actúa como Composition Root para los flujos HTTP.
+Actúa como **Composition Root** para los flujos HTTP.
 
 ---
 
@@ -18,6 +18,7 @@ logging
 middleware
 registrar adapters
 conectar ports con implementaciones
+inicializar infraestructura seleccionada
 ```
 
 ---
@@ -26,27 +27,95 @@ conectar ports con implementaciones
 
 Aquí pueden conocerse simultáneamente abstracciones e implementaciones concretas.
 
-Actualmente conecta:
+Application no toma esta decisión.
+
+Actualmente el Host siempre conecta:
+
+```text
+ICraftItemUseCase
+    → CraftItemHandler
+
+IGetInventoryUseCase
+    → GetInventoryHandler
+```
+
+La persistencia se selecciona mediante configuración.
+
+---
+
+## Selección de persistencia
+
+Configuración:
+
+```json
+{
+  "Persistence": {
+    "Provider": "InMemory"
+  },
+  "ConnectionStrings": {
+    "Grounded": "Data Source=grounded-hexagonal.db"
+  }
+}
+```
+
+Valores soportados:
+
+```text
+InMemory
+Sqlite
+```
+
+### InMemory
 
 ```text
 IInventoryRepository
-    ↓
-InMemoryInventoryRepository
+    → InMemoryInventoryRepository
 
 IRecipeRepository
-    ↓
-InMemoryRecipeRepository
-
-ICraftItemUseCase
-    ↓
-CraftItemHandler
-
-IGetInventoryUseCase
-    ↓
-GetInventoryHandler
+    → InMemoryRecipeRepository
 ```
 
-Application no conoce esas implementaciones concretas.
+### Sqlite
+
+```text
+IInventoryRepository
+    → EfCoreInventoryRepository
+
+IRecipeRepository
+    → EfCoreRecipeRepository
+```
+
+Cuando `Sqlite` está activo, el Host ejecuta:
+
+```text
+EfCoreDatabaseInitializer
+    → EnsureCreatedAsync
+```
+
+antes de aceptar tráfico.
+
+---
+
+## Por qué la elección vive aquí
+
+El Host es el lugar donde se ensamblan piezas concretas:
+
+```text
+Port
+  +
+Adapter
+  +
+Framework startup
+```
+
+Por eso puede conocer simultáneamente:
+
+```text
+IInventoryRepository
+EfCoreInventoryRepository
+```
+
+Application sólo conoce el primero.
 
 ---
 
@@ -57,7 +126,7 @@ POST /api/crafting/items
 GET  /api/inventories/{playerId}
 ```
 
-El Host registra los endpoints, pero la traducción HTTP vive en:
+La traducción HTTP vive en:
 
 ```text
 Grounded.Hexagonal.Adapters.Inbound.Http
@@ -89,6 +158,6 @@ reglas de spoilage
 
 ## Regla principal
 
-El Host ensambla la aplicación.
+El Host **elige, conecta e inicia**.
 
 No es el lugar donde vive el negocio.

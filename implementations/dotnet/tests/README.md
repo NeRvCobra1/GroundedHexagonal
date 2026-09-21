@@ -145,3 +145,25 @@ ProcessFoodSpoilage
 
 Esto demuestra que los mismos casos de uso funcionan con otro outbound adapter sin modificar Application ni Domain.
 
+
+
+---
+
+## Composition Root Integration Tests
+
+Los tests de integración verifican ahora también que los Hosts puedan seleccionar adapters concretos por configuración.
+
+Se comprueba:
+
+```text
+Host.Api + Sqlite
+    → endpoint real usando EfCoreInventoryRepository
+
+Host.Worker + InMemory
+    → IFoodRepository resuelve InMemoryFoodRepository
+
+Host.Worker + Sqlite
+    → IFoodRepository resuelve EfCoreFoodRepository
+```
+
+El objetivo no es probar nuevamente las reglas de Domain, sino comprobar el ensamblaje del Composition Root.

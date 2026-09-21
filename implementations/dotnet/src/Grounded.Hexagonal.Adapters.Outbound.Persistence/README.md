@@ -209,3 +209,25 @@ Domain business rules
 Application no sabe si sus datos vienen de memoria, SQLite, SQL Server, archivos o un servicio externo.
 
 Los adapters absorben esas diferencias tecnológicas.
+
+
+---
+
+## Quién elige el adapter
+
+Este proyecto ofrece implementaciones concretas, pero **no decide cuál está activa**.
+
+La selección ocurre en cada Composition Root:
+
+```text
+Host.Api
+Host.Worker
+```
+
+mediante:
+
+```text
+Persistence:Provider
+```
+
+Esto evita convertir al propio adapter de persistencia en un selector global de infraestructura.

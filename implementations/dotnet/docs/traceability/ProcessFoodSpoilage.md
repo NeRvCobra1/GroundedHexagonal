@@ -228,3 +228,16 @@ so an already spoiled entity is rehydrated without replaying `RULE-SPOILAGE-001`
 
 A persistence integration test verifies the complete use case against SQLite while `IClock` remains independently replaceable.
 
+
+
+---
+
+## Host composition
+
+The concrete persistence adapter is selected outside Application by the executable Host.
+
+```text
+Persistence:Provider = InMemory | Sqlite
+```
+
+Therefore the traced use case keeps the same ports and handler while the Composition Root changes the concrete implementation.

@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Adapters.Outbound.Persistence\Grounded.Hexagonal.Adapters.Outbound.Persistence.csproj" />
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Application\Grounded.Hexagonal.Application.csproj" />
     <ProjectReference Include="..\..\src\Grounded.Hexagonal.Domain\Grounded.Hexagonal.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Grounded.Hexagonal.Host.Worker\Grounded.Hexagonal.Host.Worker.csproj" />
   </ItemGroup>
 
 </Project>

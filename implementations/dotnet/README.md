@@ -390,7 +390,7 @@ Por ejemplo:
 ```text
 IInventoryRepository
         ↓
-SqlInventoryRepository
+EfCoreInventoryRepository
 ```
 
 El Host puede conocer ambos porque necesita conectarlos.
@@ -462,8 +462,8 @@ IInventoryRepository
 pero no de:
 
 ```text
-SqlInventoryRepository
-AppDbContext
+EfCoreInventoryRepository
+GroundedDbContext
 ```
 
 ---
@@ -818,3 +818,38 @@ PORT-OUT-CLOCK-001
 ```
 
 La decisión está documentada en `ADR-NET-0009`.
+
+
+---
+
+## Selección de adapters en los Hosts
+
+Los ejecutables son los **Composition Roots** y deciden qué adapters concretos utilizar.
+
+La persistencia puede seleccionarse mediante configuración:
+
+```text
+Persistence:Provider = InMemory | Sqlite
+```
+
+Con SQLite se utiliza:
+
+```text
+ConnectionStrings:Grounded
+```
+
+Esto permite cambiar:
+
+```text
+InMemory repositories
+        ↕
+EF Core + SQLite repositories
+```
+
+sin modificar Domain, Application ni los inbound adapters.
+
+La decisión está documentada en:
+
+```text
+docs/adr/ADR-NET-0011-host-configured-persistence-composition.md
+```
