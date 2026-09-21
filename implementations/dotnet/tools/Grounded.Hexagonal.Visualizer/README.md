@@ -16,19 +16,28 @@ Therefore it intentionally:
 
 This preserves the dependency graph we are trying to study.
 
-## V1 scope
+## V2 scope
 
-V1 includes `UC-CRAFT-001 / CraftItem` and shows:
+V2 includes the three reference flows:
 
+1. `UC-CRAFT-001 / CraftItem` — Command initiated by HTTP and persisted.
+2. `UC-INVENTORY-001 / GetInventory` — Query initiated by HTTP with no state mutation.
+3. `UC-SPOILAGE-001 / ProcessFoodSpoilage` — Background Command initiated by a Worker.
+
+The UI compares each scenario by:
+
+- flow type;
+- trigger;
+- whether it changes state;
+- key architectural lesson;
 - runtime call direction;
 - general architectural stage;
 - specific Hexagonal Architecture role;
 - concrete .NET class/member;
 - changing payload representation;
-- animated step-by-step playback;
 - relevant source lines read from the real `.cs` files;
-- the physical project/dependency map;
-- the active project/file for the selected runtime step.
+- compile-time project dependency direction;
+- active physical project/file.
 
 The playback is an **educational simulation**, not runtime telemetry.
 
@@ -46,9 +55,23 @@ Or from this folder:
 dotnet run --launch-profile http
 ```
 
-The project also explicitly enables static web assets so the Blazor framework script can be served even if the tool is started locally without the launch profile.
-
 Open the URL printed by ASP.NET Core.
+
+## What the scenarios teach
+
+### CraftItem
+
+Shows a state-changing Command:
+
+`HTTP → Inbound Adapter → Input Port → Application → Domain → Output Port → Persistence Adapter`.
+
+### GetInventory
+
+Shows a read-only Query. It loads an `Inventory`, asks Domain for a read-only snapshot and returns a result without calling `SaveAsync`.
+
+### ProcessFoodSpoilage
+
+Shows that Hexagonal Architecture does not require HTTP as the entry mechanism. `FoodSpoilageWorker` is the inbound adapter. It also demonstrates `IClock → SystemClock`, an outbound port/adapter pair unrelated to database persistence.
 
 ## How source snippets work
 
@@ -66,21 +89,10 @@ At runtime `SourceSnippetService` resolves that file under `implementations/dotn
 
 The visualizer does not copy productive C# into its own source.
 
-## Adding future scenarios
-
-Add a JSON file to `Data/Scenarios/` following `CraftItem.json`.
-
-The intended next scenarios are:
-
-1. `UC-INVENTORY-001 / GetInventory`
-2. `UC-SPOILAGE-001 / ProcessFoodSpoilage`
-
-Those scenarios can reuse the same UI and playback engine.
-
 ## Important distinction
 
 The upper graph shows **runtime call direction**.
 
 The lower project graph shows **compile-time dependency direction**.
 
-They are intentionally separate because one of the key lessons of Hexagonal Architecture is that runtime calls can travel toward an adapter even while the source-code dependency points back toward a port owned by the core.
+They are intentionally separate because runtime calls can travel toward an adapter even while source-code dependencies point back toward a port owned by the core.

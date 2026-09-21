@@ -15,6 +15,7 @@
     --amber: #f6c76d;
     --coral: #ff8d78;
     --cyan: #73d9ee;
+    --violet: #c5a7ff;
     --shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
 }
 
@@ -125,33 +126,6 @@ pre {
     color: var(--muted);
     font-size: 1rem;
     line-height: 1.65;
-}
-
-.scenario-picker {
-    min-width: 270px;
-    display: grid;
-    gap: 0.45rem;
-}
-
-.scenario-picker label,
-.scenario-picker span {
-    font-size: 0.72rem;
-    color: var(--muted);
-}
-
-.scenario-picker select {
-    width: 100%;
-    padding: 0.8rem 0.9rem;
-    color: var(--text);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 0.75rem;
-    outline: none;
-}
-
-.scenario-picker select:focus {
-    border-color: rgba(143, 240, 203, 0.7);
-    box-shadow: 0 0 0 3px rgba(143, 240, 203, 0.08);
 }
 
 .context-banner {
@@ -827,7 +801,253 @@ button:disabled {
     color: var(--mint);
 }
 
+
+
+/* V2 · scenario comparison and role-aware visual language */
+.hero-id-card {
+    min-width: 235px;
+    display: grid;
+    gap: 0.25rem;
+    align-self: stretch;
+    align-content: center;
+    padding: 0.95rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: linear-gradient(145deg, rgba(17, 40, 36, 0.9), rgba(8, 25, 23, 0.92));
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+}
+
+.hero-id-card span,
+.hero-id-card small {
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
+.hero-id-card strong {
+    color: var(--mint);
+    font-size: 0.96rem;
+    letter-spacing: 0.03em;
+}
+
+.scenario-switcher {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0 0 0.85rem;
+}
+
+.scenario-card {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.82rem;
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: 0.95rem;
+    background: rgba(13, 30, 28, 0.62);
+    cursor: pointer;
+    transition: 170ms ease;
+}
+
+.scenario-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(143, 240, 203, 0.34);
+    background: rgba(17, 40, 36, 0.86);
+}
+
+.scenario-card.active {
+    border-color: rgba(143, 240, 203, 0.66);
+    background: linear-gradient(145deg, rgba(25, 65, 55, 0.92), rgba(12, 38, 33, 0.92));
+    box-shadow: 0 0 0 3px rgba(143, 240, 203, 0.06);
+}
+
+.scenario-icon {
+    width: 2.15rem;
+    height: 2.15rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.7rem;
+    color: #06261d;
+    background: var(--mint);
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.scenario-card:nth-child(2) .scenario-icon {
+    color: #06232b;
+    background: var(--cyan);
+}
+
+.scenario-card:nth-child(3) .scenario-icon {
+    color: #271c08;
+    background: var(--amber);
+}
+
+.scenario-card-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.18rem;
+}
+
+.scenario-card-copy strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.83rem;
+}
+
+.scenario-card-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 0.66rem;
+}
+
+.scenario-state {
+    padding: 0.3rem 0.45rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.scenario-state.mutates {
+    color: var(--coral);
+    border: 1px solid rgba(255, 141, 120, 0.2);
+    background: rgba(255, 141, 120, 0.07);
+}
+
+.scenario-state.readonly {
+    color: var(--cyan);
+    border: 1px solid rgba(115, 217, 238, 0.2);
+    background: rgba(115, 217, 238, 0.07);
+}
+
+.scenario-facts {
+    display: grid;
+    grid-template-columns: 0.8fr 0.8fr 0.7fr 2.2fr;
+    gap: 1px;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background: var(--line);
+}
+
+.scenario-facts > div {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.68rem 0.8rem;
+    background: rgba(9, 26, 24, 0.96);
+}
+
+.scenario-facts span {
+    color: var(--muted);
+    font-size: 0.61rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.scenario-facts strong {
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
+.fact-yes {
+    color: var(--coral);
+}
+
+.fact-no {
+    color: var(--cyan);
+}
+
+.lesson-fact strong {
+    color: #d7e5e1;
+    font-weight: 620;
+}
+
+.role-legend {
+    max-width: 520px;
+    justify-content: flex-end;
+}
+
+.legend-dot.external { background: var(--amber); }
+.legend-dot.inbound { background: var(--cyan); }
+.legend-dot.core { background: var(--mint); }
+.legend-dot.outbound { background: var(--coral); }
+.legend-dot.domain { background: var(--violet); }
+
+.canvas-caption {
+    position: absolute;
+    z-index: 1;
+    color: rgba(145, 170, 164, 0.28);
+    font-size: 0.58rem;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.canvas-caption-top {
+    left: 50%;
+    top: 1rem;
+    transform: translateX(-50%);
+}
+
+.node-role {
+    width: fit-content;
+    padding: 0.14rem 0.3rem;
+    border-radius: 0.32rem;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 0.48rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+}
+
+.flow-node.role-external {
+    border-left: 3px solid rgba(246, 199, 109, 0.72);
+}
+
+.flow-node.role-inbound {
+    border-left: 3px solid rgba(115, 217, 238, 0.78);
+}
+
+.flow-node.role-core {
+    border-left: 3px solid rgba(143, 240, 203, 0.76);
+}
+
+.flow-node.role-outbound {
+    border-left: 3px solid rgba(255, 141, 120, 0.78);
+}
+
+.flow-node.role-domain {
+    border-left: 3px solid rgba(197, 167, 255, 0.82);
+}
+
+.flow-node.role-external .node-role { color: var(--amber); }
+.flow-node.role-inbound .node-role { color: var(--cyan); }
+.flow-node.role-core .node-role { color: var(--mint); }
+.flow-node.role-outbound .node-role { color: var(--coral); }
+.flow-node.role-domain .node-role { color: var(--violet); }
+
+
 @media (max-width: 1100px) {
+    .scenario-switcher {
+        grid-template-columns: 1fr;
+    }
+
+    .scenario-facts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     .workspace-grid,
     .lower-grid {
         grid-template-columns: 1fr;
@@ -849,8 +1069,21 @@ button:disabled {
         gap: 1rem;
     }
 
-    .scenario-picker {
+    .hero-id-card {
         min-width: 0;
+    }
+
+    .panel-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .role-legend {
+        justify-content: flex-start;
+    }
+
+    .scenario-facts {
+        grid-template-columns: 1fr;
     }
 
     .playback-toolbar {

@@ -2,8 +2,13 @@
   "id": "craft-item",
   "useCaseId": "UC-CRAFT-001",
   "name": "CraftItem · fabricar Mint Mace",
+  "navigationLabel": "CraftItem",
   "description": "Recorre la ejecución completa de POST /api/crafting/items desde HTTP hasta Domain, Persistence y de regreso a la respuesta.",
   "playbackNote": "La animación representa la dirección de ejecución en runtime. El Composition Root de Host.Api ya conectó los ports con sus adapters antes de que llegue la petición; no es un paso por el que viaje cada request.",
+  "flowType": "Command",
+  "trigger": "HTTP POST",
+  "changesState": true,
+  "keyLesson": "Un command entra por HTTP, ejecuta reglas de Domain y persiste el nuevo estado a través de output ports.",
   "steps": [
     {
       "id": "http-request",
@@ -16,7 +21,10 @@
       "explanation": "Un cliente inicia el caso de uso. HTTP es sólo una forma de entrada; no es parte del Domain ni de Application.",
       "architectureId": "UC-CRAFT-001",
       "directionNote": "Inicio del flujo de runtime.",
-      "position": { "x": 5, "y": 15 },
+      "position": {
+        "x": 5,
+        "y": 15
+      },
       "payload": {
         "label": "JSON HTTP",
         "type": "Request body",
@@ -34,7 +42,10 @@
       "explanation": "Convierte el DTO de transporte CraftItemHttpRequest en el modelo de Application CraftItemCommand. Aquí deben quedarse las decisiones de HTTP.",
       "architectureId": "ADAPTER-IN-HTTP-CRAFT-001",
       "directionNote": "Runtime entra hacia el core. La dependencia del adapter apunta a Application.",
-      "position": { "x": 18, "y": 15 },
+      "position": {
+        "x": 18,
+        "y": 15
+      },
       "payload": {
         "label": "CraftItemHttpRequest",
         "type": "HTTP DTO",
@@ -57,7 +68,10 @@
       "explanation": "Es el contrato que expone el caso de uso al mundo exterior. En C# lo representamos con una interface, pero Port e Interface no son sinónimos universales.",
       "architectureId": "PORT-IN-CRAFT-001",
       "directionNote": "El adapter conoce este contrato; Application no conoce al adapter HTTP.",
-      "position": { "x": 32, "y": 15 },
+      "position": {
+        "x": 32,
+        "y": 15
+      },
       "payload": {
         "label": "CraftItemCommand",
         "type": "Application input model",
@@ -80,7 +94,10 @@
       "explanation": "El Handler coordina los ports y delega reglas de negocio al Domain. No sabe de HTTP, SQLite ni EF Core.",
       "architectureId": "UC-CRAFT-001",
       "directionNote": "Runtime permanece dentro del core mientras Application coordina el caso de uso.",
-      "position": { "x": 46, "y": 15 },
+      "position": {
+        "x": 46,
+        "y": 15
+      },
       "payload": {
         "label": "Command + orchestration",
         "type": "Application context",
@@ -103,7 +120,10 @@
       "explanation": "Application expresa lo que necesita mediante un contrato propio: obtener una receta. No especifica si viene de SQLite, memoria, archivo o API.",
       "architectureId": "PORT-OUT-RECIPE-001",
       "directionNote": "Runtime sale del core por un output port; la dependencia sigue apuntando hacia Application.",
-      "position": { "x": 60, "y": 15 },
+      "position": {
+        "x": 60,
+        "y": 15
+      },
       "payload": {
         "label": "RecipeId",
         "type": "Domain Value Object",
@@ -126,7 +146,10 @@
       "explanation": "La implementación concreta satisface IRecipeRepository usando EF Core y SQLite, y vuelve a convertir el registro persistido en un objeto de Domain.",
       "architectureId": "PORT-OUT-RECIPE-001 implementation",
       "directionNote": "El adapter implementa un contrato definido por Application.",
-      "position": { "x": 78, "y": 15 },
+      "position": {
+        "x": 78,
+        "y": 15
+      },
       "payload": {
         "label": "Recipe",
         "type": "Domain Entity",
@@ -149,7 +172,10 @@
       "explanation": "El mismo principio: Application conoce la capacidad que necesita, no la tecnología que la resuelve.",
       "architectureId": "PORT-OUT-INVENTORY-001",
       "directionNote": "Runtime vuelve a cruzar un output port para obtener estado externo.",
-      "position": { "x": 60, "y": 39 },
+      "position": {
+        "x": 60,
+        "y": 39
+      },
       "payload": {
         "label": "PlayerId",
         "type": "Domain Value Object",
@@ -172,7 +198,10 @@
       "explanation": "EF Core lee los records y el mapper devuelve el aggregate Inventory que el Domain entiende.",
       "architectureId": "PORT-OUT-INVENTORY-001 implementation",
       "directionNote": "La infraestructura devuelve un objeto de Domain a Application.",
-      "position": { "x": 78, "y": 39 },
+      "position": {
+        "x": 78,
+        "y": 39
+      },
       "payload": {
         "label": "Inventory",
         "type": "Domain Entity / Aggregate",
@@ -195,7 +224,10 @@
       "explanation": "Aquí viven RULE-CRAFT-001 y RULE-CRAFT-002: validar todo antes de mutar, consumir ingredientes y agregar el resultado.",
       "architectureId": "RULE-CRAFT-001 · RULE-CRAFT-002",
       "directionNote": "Este es el centro de negocio. No existe conocimiento de adapters ni protocolos.",
-      "position": { "x": 46, "y": 61 },
+      "position": {
+        "x": 46,
+        "y": 61
+      },
       "payload": {
         "label": "Inventory mutated",
         "type": "Domain state",
@@ -218,7 +250,10 @@
       "explanation": "Application vuelve a usar el mismo output port, ahora para persistir el aggregate modificado por Domain.",
       "architectureId": "PORT-OUT-INVENTORY-001",
       "directionNote": "La intención de persistir cruza del core hacia infraestructura.",
-      "position": { "x": 60, "y": 61 },
+      "position": {
+        "x": 60,
+        "y": 61
+      },
       "payload": {
         "label": "Inventory",
         "type": "Domain Entity / Aggregate",
@@ -241,7 +276,10 @@
       "explanation": "El adapter traduce el estado del aggregate a records de persistencia y ejecuta SaveChangesAsync. EF Core sigue fuera del core.",
       "architectureId": "PORT-OUT-INVENTORY-001 implementation",
       "directionNote": "Detalle tecnológico en el borde exterior.",
-      "position": { "x": 78, "y": 61 },
+      "position": {
+        "x": 78,
+        "y": 61
+      },
       "payload": {
         "label": "SQLite rows",
         "type": "Persistence representation",
@@ -264,7 +302,10 @@
       "explanation": "El resultado no contiene status codes HTTP. Sólo expresa el outcome del caso de uso y deja la traducción de protocolo al inbound adapter.",
       "architectureId": "UC-CRAFT-001 result",
       "directionNote": "El flujo de runtime regresa hacia el adapter que inició el caso de uso.",
-      "position": { "x": 32, "y": 82 },
+      "position": {
+        "x": 32,
+        "y": 82
+      },
       "payload": {
         "label": "CraftItemResult",
         "type": "Application result",
@@ -287,7 +328,10 @@
       "explanation": "El mismo inbound adapter convierte CraftItemStatus.Success en una respuesta HTTP 200 con CraftItemHttpResponse.",
       "architectureId": "ADAPTER-IN-HTTP-CRAFT-001",
       "directionNote": "El adapter vuelve a encargarse del protocolo en el borde del sistema.",
-      "position": { "x": 18, "y": 82 },
+      "position": {
+        "x": 18,
+        "y": 82
+      },
       "payload": {
         "label": "CraftItemHttpResponse",
         "type": "HTTP DTO",
@@ -310,7 +354,10 @@
       "explanation": "El caso de uso terminó. La semántica HTTP existe únicamente en el borde; las reglas de crafting nunca necesitaron conocerla.",
       "architectureId": "UC-CRAFT-001 completed",
       "directionNote": "Fin del flujo de runtime.",
-      "position": { "x": 5, "y": 82 },
+      "position": {
+        "x": 5,
+        "y": 82
+      },
       "payload": {
         "label": "HTTP Response",
         "type": "200 OK",
@@ -366,12 +413,33 @@
     }
   ],
   "projectEdges": [
-    { "from": "host-api", "to": "in-http" },
-    { "from": "host-api", "to": "application" },
-    { "from": "host-api", "to": "out-persistence" },
-    { "from": "in-http", "to": "application" },
-    { "from": "application", "to": "domain" },
-    { "from": "out-persistence", "to": "application" },
-    { "from": "out-persistence", "to": "domain" }
+    {
+      "from": "host-api",
+      "to": "in-http"
+    },
+    {
+      "from": "host-api",
+      "to": "application"
+    },
+    {
+      "from": "host-api",
+      "to": "out-persistence"
+    },
+    {
+      "from": "in-http",
+      "to": "application"
+    },
+    {
+      "from": "application",
+      "to": "domain"
+    },
+    {
+      "from": "out-persistence",
+      "to": "application"
+    },
+    {
+      "from": "out-persistence",
+      "to": "domain"
+    }
   ]
 }

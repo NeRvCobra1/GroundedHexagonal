@@ -8,9 +8,19 @@ public sealed class ArchitectureScenario
 
     public string Name { get; init; } = string.Empty;
 
+    public string NavigationLabel { get; init; } = string.Empty;
+
     public string Description { get; init; } = string.Empty;
 
     public string PlaybackNote { get; init; } = string.Empty;
+
+    public string FlowType { get; init; } = string.Empty;
+
+    public string Trigger { get; init; } = string.Empty;
+
+    public bool ChangesState { get; init; }
+
+    public string KeyLesson { get; init; } = string.Empty;
 
     public IReadOnlyList<FlowStep> Steps { get; init; } = [];
 

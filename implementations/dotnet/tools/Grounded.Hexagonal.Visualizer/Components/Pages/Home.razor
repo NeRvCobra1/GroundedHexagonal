@@ -19,20 +19,55 @@ else
 
     <section class="hero">
         <div>
-            <div class="eyebrow">VISUAL EXECUTION MAP</div>
+            <div class="eyebrow">VISUAL EXECUTION MAP · @_scenario.FlowType.ToUpperInvariant()</div>
             <h1>@_scenario.Name</h1>
             <p>@_scenario.Description</p>
         </div>
 
-        <div class="scenario-picker">
-            <label for="scenario">Escenario</label>
-            <select id="scenario" value="@_scenario.Id" @onchange="OnScenarioChangedAsync">
-                @foreach (var scenario in _scenarios)
-                {
-                    <option value="@scenario.Id">@scenario.Name</option>
-                }
-            </select>
-            <span>@_scenario.UseCaseId</span>
+        <div class="hero-id-card">
+            <span>Use case activo</span>
+            <strong>@_scenario.UseCaseId</strong>
+            <small>Escenario @GetScenarioNumber(_scenario) de @_scenarios.Count</small>
+        </div>
+    </section>
+
+    <section class="scenario-switcher" aria-label="Selector de escenarios">
+        @foreach (var scenario in _scenarios)
+        {
+            var isActive = scenario.Id.Equals(_scenario.Id, StringComparison.OrdinalIgnoreCase);
+
+            <button class="scenario-card @(isActive ? "active" : string.Empty)"
+                    @onclick="() => SelectScenarioAsync(scenario.Id)">
+                <span class="scenario-icon">@GetScenarioIcon(scenario)</span>
+                <span class="scenario-card-copy">
+                    <strong>@GetScenarioLabel(scenario)</strong>
+                    <small>@scenario.FlowType · @scenario.Trigger</small>
+                </span>
+                <span class="scenario-state @(scenario.ChangesState ? "mutates" : "readonly")">
+                    @(scenario.ChangesState ? "muta estado" : "solo lectura")
+                </span>
+            </button>
+        }
+    </section>
+
+    <section class="scenario-facts">
+        <div>
+            <span>Tipo de flujo</span>
+            <strong>@_scenario.FlowType</strong>
+        </div>
+        <div>
+            <span>Trigger</span>
+            <strong>@_scenario.Trigger</strong>
+        </div>
+        <div>
+            <span>Cambia estado</span>
+            <strong class="@(_scenario.ChangesState ? "fact-yes" : "fact-no")">
+                @(_scenario.ChangesState ? "Sí" : "No")
+            </strong>
+        </div>
+        <div class="lesson-fact">
+            <span>Idea que demuestra</span>
+            <strong>@_scenario.KeyLesson</strong>
         </div>
     </section>
 
@@ -80,14 +115,18 @@ else
                     <div class="panel-kicker">RUNTIME CALL DIRECTION</div>
                     <h2>Flujo ejecutándose</h2>
                 </div>
-                <div class="legend-inline">
-                    <span><i class="legend-dot runtime"></i> recorrido</span>
-                    <span><i class="legend-dot selected"></i> paso actual</span>
+                <div class="legend-inline role-legend">
+                    <span><i class="legend-dot external"></i> exterior</span>
+                    <span><i class="legend-dot inbound"></i> entrada</span>
+                    <span><i class="legend-dot core"></i> core</span>
+                    <span><i class="legend-dot outbound"></i> salida</span>
+                    <span><i class="legend-dot domain"></i> domain</span>
                 </div>
             </div>
 
             <div class="flow-scroll">
                 <div class="flow-canvas">
+                    <div class="canvas-caption canvas-caption-top">entrada → core → salida</div>
                     <svg class="flow-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                         <defs>
                             <marker id="runtimeArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
@@ -114,11 +153,12 @@ else
                         var stepIndex = index;
                         var step = _scenario.Steps[index];
 
-                        <button class="flow-node @GetStepStateClass(index)"
+                        <button class="flow-node @GetStepStateClass(index) @GetRoleClass(step)"
                                 style="@GetFlowNodeStyle(step)"
                                 title="@step.Title"
                                 @onclick="() => SelectStepFromUiAsync(stepIndex)">
                             <span class="node-order">@step.Order</span>
+                            <span class="node-role">@GetRoleCaption(step)</span>
                             <strong>@step.ShortLabel</strong>
                             <small>@step.Implementation</small>
                         </button>
@@ -290,7 +330,7 @@ else
         <div>
             <span class="guide-number">01</span>
             <strong>Arriba: runtime</strong>
-            <p>Sigue el paquete para ver por dónde pasa la información durante CraftItem.</p>
+            <p>Sigue el paquete para ver por dónde pasa la información durante @_scenario.NavigationLabel.</p>
         </div>
         <div>
             <span class="guide-number">02</span>
@@ -299,8 +339,8 @@ else
         </div>
         <div>
             <span class="guide-number">03</span>
-            <strong>Abajo: código + archivos</strong>
-            <p>Inspecciona sólo las líneas relevantes y ubica físicamente el proyecto responsable.</p>
+            <strong>Abajo: código + dependencias</strong>
+            <p>Inspecciona las líneas relevantes y compáralas con la dirección de dependencias entre proyectos.</p>
         </div>
     </section>
 }
@@ -329,11 +369,10 @@ else
         }
     }
 
-    private async Task OnScenarioChangedAsync(ChangeEventArgs args)
+    private async Task SelectScenarioAsync(string scenarioId)
     {
         Pause();
 
-        var scenarioId = args.Value?.ToString();
         _scenario = _scenarios.FirstOrDefault(
             scenario => scenario.Id.Equals(
                 scenarioId,
@@ -393,7 +432,7 @@ else
                    _selectedIndex < _scenario.Steps.Count - 1)
             {
                 await Task.Delay(
-                    TimeSpan.FromMilliseconds(1250),
+                    TimeSpan.FromMilliseconds(1150),
                     cancellationToken);
 
                 if (!_isPlaying || cancellationToken.IsCancellationRequested)
@@ -452,6 +491,88 @@ else
             : "upcoming";
     }
 
+    private static string GetRoleClass(FlowStep step)
+    {
+        var role = step.HexRole.ToLowerInvariant();
+        var stage = step.GeneralStage.ToLowerInvariant();
+
+        if (stage.Contains("exterior", StringComparison.Ordinal))
+        {
+            return "role-external";
+        }
+
+        if (role.Contains("inbound adapter", StringComparison.Ordinal))
+        {
+            return "role-inbound";
+        }
+
+        if (role.Contains("outbound adapter", StringComparison.Ordinal))
+        {
+            return "role-outbound";
+        }
+
+        if (role.Contains("domain", StringComparison.Ordinal) ||
+            stage.Equals("domain", StringComparison.Ordinal))
+        {
+            return "role-domain";
+        }
+
+        return "role-core";
+    }
+
+    private static string GetRoleCaption(FlowStep step)
+    {
+        var role = step.HexRole.ToLowerInvariant();
+
+        if (role.Contains("inbound adapter", StringComparison.Ordinal)) return "IN ADAPTER";
+        if (role.Contains("inbound port", StringComparison.Ordinal) || role.Contains("input port", StringComparison.Ordinal)) return "INPUT PORT";
+        if (role.Contains("outbound adapter", StringComparison.Ordinal)) return "OUT ADAPTER";
+        if (role.Contains("outbound port", StringComparison.Ordinal) || role.Contains("output port", StringComparison.Ordinal)) return "OUTPUT PORT";
+        if (role.Contains("domain", StringComparison.Ordinal)) return "DOMAIN";
+        if (role.Contains("use case", StringComparison.Ordinal)) return "APPLICATION";
+        return "EXTERNAL";
+    }
+
+
+    private int GetScenarioNumber(ArchitectureScenario scenario)
+    {
+        for (var index = 0; index < _scenarios.Count; index++)
+        {
+            if (_scenarios[index].Id.Equals(
+                    scenario.Id,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return index + 1;
+            }
+        }
+
+        return 0;
+    }
+
+    private static string GetScenarioIcon(ArchitectureScenario scenario)
+    {
+        if (scenario.FlowType.Contains(
+                "Query",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Q";
+        }
+
+        if (scenario.FlowType.Contains(
+                "Background",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "W";
+        }
+
+        return "C";
+    }
+
+    private static string GetScenarioLabel(ArchitectureScenario scenario) =>
+        string.IsNullOrWhiteSpace(scenario.NavigationLabel)
+            ? scenario.Name
+            : scenario.NavigationLabel;
+
     private static string GetFlowNodeStyle(FlowStep step) =>
         $"left:{step.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;" +
         $"top:{step.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)}%;";
@@ -463,7 +584,7 @@ else
     private static string GetPayloadTagStyle(FlowStep step)
     {
         var top = step.Position.Y < 70
-            ? step.Position.Y + 8
+            ? step.Position.Y + 9
             : step.Position.Y - 11;
 
         return
