@@ -1,104 +1,128 @@
 # Grounded.Hexagonal.Visualizer
 
-Interactive educational visualizer for the .NET reference implementation of the Hexagonal Architecture laboratory.
+Herramienta educativa interactiva para observar la implementación .NET del laboratorio de Arquitectura Hexagonal.
 
-## Why this project is under `tools/`
+> El Visualizer **no forma parte del código productivo**. Vive en `tools/`, no tiene `ProjectReference` hacia los proyectos de `src/` y lee el repositorio en modo read-only.
 
-The visualizer is **not part of the productive hexagonal implementation**. It observes and explains that implementation.
+---
 
-Therefore it intentionally:
+## Ejecutar
 
-- lives outside `src/`;
-- has its own `.csproj` and `.slnx`;
-- has no `ProjectReference` to Domain, Application, Hosts or Adapters;
-- reads source files as read-only text;
-- uses curated scenario metadata instead of instrumenting production code.
-
-This preserves the dependency graph we are trying to study.
-
-
-### V2.5.1 canvas navigation polish
-
-- Adds extra left breathing room so the first runtime node is never clipped.
-- Adds click-and-drag panning on the flow-canvas background.
-- Adds explicit START and END markers on the first and last runtime nodes.
-- Keeps node clicks reserved for step selection.
-
-## V2.5 scope
-
-V2.5 keeps the three reference flows from V2 and adds a richer navigation/visual layer:
-
-1. `UC-CRAFT-001 / CraftItem` — Command initiated by HTTP and persisted.
-2. `UC-INVENTORY-001 / GetInventory` — Query initiated by HTTP with no state mutation.
-3. `UC-SPOILAGE-001 / ProcessFoodSpoilage` — Background Command initiated by a Worker.
-
-The UI compares each scenario by:
-
-- flow type;
-- trigger;
-- whether it changes state;
-- key architectural lesson;
-- runtime call direction;
-- general architectural stage;
-- specific Hexagonal Architecture role;
-- concrete .NET class/member;
-- changing payload representation;
-- relevant source lines read from the real `.cs` files;
-- compile-time project dependency direction;
-- active physical project/file.
-
-The playback is an **educational simulation**, not runtime telemetry.
-
-### V2.5 visual tooling
-
-V2.5 adds:
-
-- zoom controls over the runtime canvas;
-- `Focus` mode to dim unrelated steps and emphasize the current boundary;
-- `Follow` mode that keeps the active node visible while playback advances;
-- an animated payload marker whose shape/color changes by payload category;
-- a previous/current/next payload transformation rail;
-- a compact role glossary for Exterior / Inbound / Core / Domain / Outbound;
-- highlighted dependency edges around the active project;
-- a synchronized physical source path: `src → project → folder → file → C# symbol`.
-
-The visualizer still does not instrument or reference the productive projects.
-
-## Run
-
-From `implementations/dotnet`:
+Desde `implementations/dotnet`:
 
 ```powershell
 dotnet run --project tools\Grounded.Hexagonal.Visualizer --launch-profile http
 ```
 
-Or from this folder:
+O desde esta carpeta:
 
 ```powershell
 dotnet run --launch-profile http
 ```
 
-Open the URL printed by ASP.NET Core.
+---
 
-## What the scenarios teach
+## Qué puede visualizar
 
-### CraftItem
+Escenarios disponibles:
 
-Shows a state-changing Command:
+```text
+UC-CRAFT-001      CraftItem
+UC-INVENTORY-001  GetInventory
+UC-SPOILAGE-001   ProcessFoodSpoilage
+```
 
-`HTTP → Inbound Adapter → Input Port → Application → Domain → Output Port → Persistence Adapter`.
+Cada escenario muestra:
 
-### GetInventory
+```text
+trigger
+runtime flow
+rol hexagonal de cada paso
+Architecture ID
+implementación C# concreta
+payload actual
+source file
+snippet con líneas reales
+dependencia de proyectos
+ubicación física en el repositorio
+```
 
-Shows a read-only Query. It loads an `Inventory`, asks Domain for a read-only snapshot and returns a result without calling `SaveAsync`.
+---
 
-### ProcessFoodSpoilage
+## Execution Flow
 
-Shows that Hexagonal Architecture does not require HTTP as the entry mechanism. `FoodSpoilageWorker` is the inbound adapter. It also demonstrates `IClock → SystemClock`, an outbound port/adapter pair unrelated to database persistence.
+Reproduce una secuencia educativa del caso de uso.
 
-## How source snippets work
+Ejemplo conceptual:
 
-Scenario metadata stores a relative file path plus a text anchor, for example:
+```text
+HTTP
+→ Inbound Adapter
+→ Input Port
+→ Application
+→ Domain
+→ Output Port
+→ Outbound Adapter
+→ Exterior
+```
+
+El paquete visual cambia para ayudar a seguir transformaciones como:
+
+```text
+HTTP JSON
+→ DTO
+→ Command / Query
+→ Domain state
+→ persistence representation
+→ Application Result
+→ HTTP Response
+```
+
+El playback es metadata curada. **No es runtime telemetry.**
+
+---
+
+## Repository Map
+
+Escanea `implementations/dotnet` y construye un mapa físico navegable:
+
+```text
+área
+→ proyecto
+→ carpeta
+→ archivo
+→ símbolo C#
+```
+
+Cubre:
+
+```text
+src
+tests
+docs
+tools
+root/config files
+```
+
+Excluye:
+
+```text
+bin
+obj
+.git
+.vs
+node_modules
+```
+
+Cuando el paso activo tiene un archivo C# asociado, Repository Map puede seguir ese archivo y, cuando el scanner lo detecta, su clase/interface/método/propiedad.
+
+---
+
+## Source snippets
+
+Los escenarios almacenan una ruta y un ancla de texto, no una copia del código.
+
+Ejemplo:
 
 ```json
 {
@@ -108,60 +132,102 @@ Scenario metadata stores a relative file path plus a text anchor, for example:
 }
 ```
 
-At runtime `SourceSnippetService` resolves that file under `implementations/dotnet`, finds the anchor and returns the current line numbers and text.
+`SourceSnippetService` abre el archivo real y calcula sus líneas actuales.
 
-The visualizer does not copy productive C# into its own source.
+---
 
-## Important distinction
+## Tres mapas, tres preguntas
 
-The upper graph shows **runtime call direction**.
-
-The lower project graph shows **compile-time dependency direction**.
-
-They are intentionally separate because runtime calls can travel toward an adapter even while source-code dependencies point back toward a port owned by the core.
-
-## V2.5.2 — click or drag on the runtime map
-
-The runtime canvas now distinguishes a click from a drag gesture:
-
-- A short click on a runtime node selects that step.
-- Moving the pointer more than a small threshold pans the canvas, even when the gesture starts on a node.
-- A completed drag suppresses the synthetic click that browsers emit after pointer-up.
-- Text selection is disabled inside the runtime canvas so dragging feels like moving a map instead of selecting labels.
-
-This behavior is visualizer-only and does not affect the productive Hexagonal Architecture projects.
-
-## V3 — Physical Repository Map
-
-V3 adds a second visualization mode without changing the runtime-flow engine:
-
-- **Execution Flow** keeps the V2/V2.5 scenario playback.
-- **Repository Map** scans `implementations/dotnet` read-only and builds a physical hierarchy.
-
-The repository map covers:
+### Runtime flow
 
 ```text
-implementations/dotnet
-├── root solution/config files
-├── src
-├── tests
-├── docs
-└── tools
+¿Qué se ejecuta después de qué?
 ```
 
-Navigation goes from:
+### Compile-time dependency map
 
 ```text
-area → project → folder → file → C# type/method
+¿Qué proyecto depende de cuál?
 ```
 
-The active runtime step is linked to the physical map. When the selected flow step references a source file, Repository Map can follow that file and, when detectable, the concrete C# symbol.
+### Repository map
 
-### V3 implementation rules
+```text
+¿Dónde vive físicamente el código?
+```
 
-- No `ProjectReference` is added to the productive projects.
-- No instrumentation is added to Domain/Application/Adapters/Hosts.
-- The repository is observed via read-only filesystem access.
-- `bin`, `obj`, `.git`, `.vs` and `node_modules` are excluded.
-- C# symbols are extracted only to support educational navigation; this is not a replacement for Roslyn semantic analysis.
-- The repository snapshot is cached for the lifetime of the visualizer process. Restart the visualizer after changing the physical repository structure.
+Separarlas es parte del objetivo educativo.
+
+---
+
+## Controles
+
+La interfaz ofrece:
+
+```text
+Play
+Pause
+Back
+Step
+Reset
+Zoom
+Focus
+Follow
+```
+
+Los nodos `START` y `END` identifican los extremos del flujo.
+
+---
+
+## Limitaciones conocidas
+
+### No es tracing real
+
+El Visualizer no instrumenta `src/` ni escucha una request real.
+
+Una futura herramienta de observabilidad podría usar `ActivitySource`, OpenTelemetry o eventos, pero queda fuera del alcance `v1.0.0`.
+
+### Scanner C# ligero
+
+El Repository Map utiliza detección educativa de símbolos y no reemplaza Roslyn.
+
+### Snapshot del repositorio
+
+El mapa físico se cachea durante la vida del proceso. Reinicia el Visualizer después de cambios estructurales en archivos/carpetas.
+
+### Click + drag del canvas
+
+Se exploró pan por click+drag, pero no se considera interacción garantizada porque no respondió consistentemente en todas las pruebas locales.
+
+Usa como alternativas:
+
+```text
+scroll
+Zoom
+Focus
+Follow
+selección directa de nodos
+```
+
+---
+
+## Por qué no referencia los proyectos productivos
+
+La herramienta que explica la arquitectura no debe modificar artificialmente la arquitectura que intenta explicar.
+
+Por eso:
+
+```text
+src/    sistema observado
+tools/  observador educativo
+```
+
+El Visualizer puede leer source files, pero no forma parte del grafo productivo.
+
+---
+
+## Documentación relacionada
+
+- [`../../docs/guides/Visualizer.md`](../../docs/guides/Visualizer.md)
+- [`../../docs/architecture/README.md`](../../docs/architecture/README.md)
+- [`../../docs/guides/HowToReadThisImplementation.md`](../../docs/guides/HowToReadThisImplementation.md)

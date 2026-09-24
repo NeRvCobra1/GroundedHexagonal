@@ -1,147 +1,123 @@
 # Documentación específica de la implementación .NET
 
-Esta carpeta contiene documentación relacionada exclusivamente con decisiones, diagramas y trazabilidad de la implementación .NET/C#.
+Esta carpeta documenta cómo la arquitectura y la specification común se materializan en .NET/C#.
 
-No reemplaza la documentación conceptual ni la especificación independiente del lenguaje.
+No reemplaza la documentación conceptual ni la specification independiente del lenguaje.
 
 ---
 
-## Estructura
+## Índice
 
 ```text
 docs/
-├── adr/
 ├── architecture/
-├── diagrams/
+│   └── README.md
+│
 ├── guides/
-└── traceability/
+│   ├── README.md
+│   ├── HowToReadThisImplementation.md
+│   ├── RunAndValidate.md
+│   ├── SQLiteDemo.md
+│   └── Visualizer.md
+│
+├── adr/
+│   └── ADR-NET-0001 ... ADR-NET-0013
+│
+├── traceability/
+│   ├── CraftItem.md
+│   ├── GetInventory.md
+│   └── ProcessFoodSpoilage.md
+│
+└── FINAL_STATUS.md
 ```
 
 ---
 
-## adr/
+## Por dónde empezar
 
-Contiene Architecture Decision Records específicos de .NET.
+Si quieres **entender la arquitectura**:
 
-Ejemplos:
+1. [`architecture/README.md`](architecture/README.md)
+2. [`guides/HowToReadThisImplementation.md`](guides/HowToReadThisImplementation.md)
+3. Visualizer
+4. ADRs y traceability según aparezcan dudas concretas
 
-```text
-separación por assemblies
-interfaces para ports
-Composition Roots
-BackgroundService
-persistencia concreta
-```
+Si quieres **ejecutar el proyecto**:
+
+1. [`guides/RunAndValidate.md`](guides/RunAndValidate.md)
+2. [`guides/SQLiteDemo.md`](guides/SQLiteDemo.md)
+3. [`guides/Visualizer.md`](guides/Visualizer.md)
+
+Si quieres **cerrar/releasear la implementación**:
+
+1. [`FINAL_STATUS.md`](FINAL_STATUS.md)
 
 ---
 
 ## architecture/
 
-Explica cómo los conceptos definidos por la arquitectura general se representan dentro de la solución .NET.
+Explica:
+
+```text
+runtime flow
+dependency direction
+physical repository map
+Domain
+Application
+Ports
+Adapters
+Composition Roots
+Hexagonal vs .NET
+```
 
 ---
 
-## diagrams/
+## guides/
 
-Contiene diagramas de Nivel 3:
+Contiene procedimientos educativos y operativos.
 
-```text
-clases
-interfaces
-handlers
-adapters
-hosts
-dependencias entre assemblies
-```
+No define reglas arquitectónicas nuevas.
 
-Los diagramas conceptuales independientes del lenguaje no deben vivir exclusivamente aquí.
+---
+
+## adr/
+
+Architecture Decision Records específicos de esta implementación.
+
+Una decisión pertenece aquí si existe por elecciones de .NET/C#, framework, persistencia o estructura concreta del proyecto.
 
 ---
 
 ## traceability/
 
-Relaciona:
+Conecta:
 
 ```text
 Architecture ID
     ↓
-C# type
+C# implementation
     ↓
 project
     ↓
-test
+tests
 ```
 
 ---
 
-## Regla principal
+## Regla de ubicación documental
 
-Si una decisión sólo existe porque estamos usando .NET/C#, puede documentarse aquí.
+Si una afirmación seguiría siendo válida al implementar la misma specification en Java/NestJS/etc., probablemente no debe existir **únicamente** dentro de `implementations/dotnet/docs`.
 
-Si la decisión seguiría siendo válida en Java, NestJS u otra implementación, probablemente pertenece a la documentación o especificación común.
-
-
----
-
-## Último caso documentado
-
-`ProcessFoodSpoilage` agrega:
+Si existe porque usamos:
 
 ```text
-docs/adr/ADR-NET-0009-worker-trigger-and-clock-adapter.md
-docs/traceability/ProcessFoodSpoilage.md
+C# interfaces
+ASP.NET Core
+BackgroundService
+EF Core
+SQLite
+Program.cs
+xUnit
 ```
 
-La documentación distingue explícitamente el rol arquitectónico de un inbound/outbound adapter de las tecnologías concretas `BackgroundService` y `SystemClock`.
-
----
-
-## Persistencia relacional
-
-El adapter EF Core + SQLite se documenta mediante:
-
-```text
-docs/adr/ADR-NET-0010-ef-core-sqlite-persistence-adapter.md
-```
-
-y se refleja en la trazabilidad de los tres casos de uso existentes.
-
-La implementación mantiene separados:
-
-```text
-Domain model
-Persistence model
-```
-
-mediante mapeo explícito.
-
-
-
----
-
-## Composition Root configurable
-
-La selección de persistencia `InMemory` o `Sqlite` por Host se documenta en:
-
-```text
-docs/adr/ADR-NET-0011-host-configured-persistence-composition.md
-```
-
-La configuración concreta vive en los Hosts; Application continúa dependiendo únicamente de sus ports.
-
-
----
-
-## Demo SQLite persistente
-
-La prueba manual de persistencia local se documenta en:
-
-```text
-docs/guides/SQLiteDemo.md
-```
-
-La decisión de usar seed idempotente en Development está registrada en:
-
-```text
-docs/adr/ADR-NET-0013-idempotent-development-demo-data.md
-```
+entonces sí es documentación específica de esta implementación.
