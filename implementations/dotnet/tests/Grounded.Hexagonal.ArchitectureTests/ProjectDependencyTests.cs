@@ -107,7 +107,12 @@ public sealed class ProjectDependencyTests
             .Where(element => element.Name.LocalName == "ProjectReference")
             .Select(element => element.Attribute("Include")?.Value)
             .Where(include => !string.IsNullOrWhiteSpace(include))
-            .Select(include => Path.GetFileNameWithoutExtension(include!))
+            // ProjectReference paths in the .csproj currently use Windows-style
+            // backslashes. Normalize them so this architecture test behaves the
+            // same on Windows and on Linux CI runners.
+            .Select(include =>
+                Path.GetFileNameWithoutExtension(
+                    include!.Replace('\\', '/'))!)
             .ToArray();
     }
 
