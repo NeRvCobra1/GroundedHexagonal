@@ -1,0 +1,341 @@
+{
+  "id": "get-inventory",
+  "useCaseId": "UC-INVENTORY-001",
+  "name": "GetInventory · consultar inventario",
+  "navigationLabel": "GetInventory",
+  "description": "Sigue GET /api/inventories/{playerId} desde HTTP hasta Application, Persistence y Domain, y observa por qué una Query puede leer estado sin modificarlo ni ejecutar SaveAsync.",
+  "playbackNote": "Este recorrido es una Query. El paquete entra por HTTP, cruza un Input Port, lee mediante IInventoryRepository y usa un snapshot de Domain. No existe un paso de persistencia de salida porque GetInventory no modifica estado.",
+  "flowType": "Query",
+  "trigger": "HTTP GET",
+  "changesState": false,
+  "keyLesson": "Una Query puede atravesar ports y adapters sin mutar Domain ni llamar SaveAsync.",
+  "steps": [
+    {
+      "id": "http-request",
+      "order": 1,
+      "title": "Llega la consulta HTTP",
+      "shortLabel": "HTTP GET",
+      "generalStage": "Exterior del hexágono",
+      "hexRole": "Trigger / Driving actor",
+      "implementation": "GET /api/inventories/{playerId}",
+      "explanation": "Un cliente solicita una vista del inventario. HTTP inicia el flujo, pero la consulta de negocio no depende del protocolo.",
+      "architectureId": "UC-INVENTORY-001",
+      "directionNote": "Inicio del flujo de runtime.",
+      "position": {
+        "x": 5,
+        "y": 16
+      },
+      "payload": {
+        "label": "Route value",
+        "type": "HTTP route parameter",
+        "preview": "playerId = 11111111-1111-1111-1111-111111111111"
+      }
+    },
+    {
+      "id": "http-adapter-in",
+      "order": 2,
+      "title": "El adapter HTTP crea la Query",
+      "shortLabel": "Inbound Adapter",
+      "generalStage": "Infrastructure / Entrada",
+      "hexRole": "Inbound Adapter",
+      "implementation": "GetInventoryEndpoint.HandleAsync",
+      "explanation": "Valida el Guid de transporte y lo transforma en PlayerId + GetInventoryQuery. Las decisiones HTTP se quedan en el adapter.",
+      "architectureId": "ADAPTER-IN-HTTP-INVENTORY-001",
+      "directionNote": "Runtime entra al core; el adapter depende de Application.",
+      "position": {
+        "x": 20,
+        "y": 16
+      },
+      "payload": {
+        "label": "GetInventoryQuery",
+        "type": "Application query",
+        "preview": "PlayerId : PlayerId\n11111111-..."
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Inbound.Http/GetInventory/GetInventoryEndpoint.cs",
+        "startContains": "private static async Task<IResult> HandleAsync(",
+        "takeLines": 24
+      }
+    },
+    {
+      "id": "input-port",
+      "order": 3,
+      "title": "La Query cruza el Input Port",
+      "shortLabel": "Input Port",
+      "generalStage": "Application",
+      "hexRole": "Inbound Port / Input Port",
+      "implementation": "IGetInventoryUseCase",
+      "explanation": "El contrato expone la capacidad de consultar inventario sin hacer que Application conozca ASP.NET Core.",
+      "architectureId": "PORT-IN-INVENTORY-001",
+      "directionNote": "El adapter conoce el port; Application no conoce el adapter HTTP.",
+      "position": {
+        "x": 35,
+        "y": 16
+      },
+      "payload": {
+        "label": "GetInventoryQuery",
+        "type": "Application input model",
+        "preview": "PlayerId = 11111111-..."
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/Ports/Inbound/IGetInventoryUseCase.cs",
+        "startContains": "public interface IGetInventoryUseCase",
+        "takeLines": 8
+      }
+    },
+    {
+      "id": "handler",
+      "order": 4,
+      "title": "Application coordina la consulta",
+      "shortLabel": "Query Handler",
+      "generalStage": "Application",
+      "hexRole": "Use Case / Application Service",
+      "implementation": "GetInventoryHandler.ExecuteAsync",
+      "explanation": "El handler orquesta la lectura. No contiene SQL, HTTP ni una regla de persistencia; sólo usa el capability que declara el output port.",
+      "architectureId": "UC-INVENTORY-001",
+      "directionNote": "Application decide qué necesita leer y cómo convertirlo en resultado.",
+      "position": {
+        "x": 50,
+        "y": 16
+      },
+      "payload": {
+        "label": "Query context",
+        "type": "Application context",
+        "preview": "GetInventoryQuery\n+ IInventoryRepository"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/UseCases/GetInventory/GetInventoryHandler.cs",
+        "startContains": "public async Task<GetInventoryResult> ExecuteAsync(",
+        "takeLines": 38
+      }
+    },
+    {
+      "id": "inventory-output-port",
+      "order": 5,
+      "title": "Application solicita cargar el inventario",
+      "shortLabel": "Output Port",
+      "generalStage": "Application",
+      "hexRole": "Outbound Port / Output Port",
+      "implementation": "IInventoryRepository.GetByPlayerIdAsync",
+      "explanation": "Application pide una capacidad de lectura mediante un contrato propio. No especifica SQLite, EF Core ni InMemory.",
+      "architectureId": "PORT-OUT-INVENTORY-001",
+      "directionNote": "Runtime sale del core por el output port para obtener estado externo.",
+      "position": {
+        "x": 65,
+        "y": 16
+      },
+      "payload": {
+        "label": "PlayerId",
+        "type": "Domain Value Object",
+        "preview": "PlayerId = 11111111-..."
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/Ports/Outbound/IInventoryRepository.cs",
+        "startContains": "Task<InventoryAggregate?> GetByPlayerIdAsync(",
+        "takeLines": 8
+      }
+    },
+    {
+      "id": "inventory-adapter",
+      "order": 6,
+      "title": "EF Core rehidrata el inventario",
+      "shortLabel": "Outbound Adapter",
+      "generalStage": "Infrastructure / Salida",
+      "hexRole": "Outbound Adapter",
+      "implementation": "EfCoreInventoryRepository.GetByPlayerIdAsync",
+      "explanation": "El adapter consulta SQLite, incluye sus items y los convierte de records de persistencia al aggregate Inventory.",
+      "architectureId": "PORT-OUT-INVENTORY-001 implementation",
+      "directionNote": "La infraestructura satisface un port definido hacia adentro.",
+      "position": {
+        "x": 82,
+        "y": 16
+      },
+      "payload": {
+        "label": "Inventory",
+        "type": "Domain Aggregate",
+        "preview": "Mint Shard: 12\nTough Gunk: 5\nFlower Petal: 8"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Outbound.Persistence/EntityFrameworkCore/EfCoreInventoryRepository.cs",
+        "startContains": "public async Task<InventoryAggregate?> GetByPlayerIdAsync(",
+        "takeLines": 29
+      }
+    },
+    {
+      "id": "domain-snapshot",
+      "order": 7,
+      "title": "Domain expone un snapshot de lectura",
+      "shortLabel": "Domain Snapshot",
+      "generalStage": "Domain",
+      "hexRole": "Domain Entity / read behavior",
+      "implementation": "Inventory.GetItems()",
+      "explanation": "El aggregate no expone su diccionario interno. Devuelve valores de dominio de sólo lectura representando el estado actual.",
+      "architectureId": "UC-INVENTORY-001 domain read",
+      "directionNote": "La consulta usa comportamiento de Domain sin modificar su estado.",
+      "position": {
+        "x": 65,
+        "y": 48
+      },
+      "payload": {
+        "label": "InventoryItemQuantity[]",
+        "type": "Read-only domain snapshot",
+        "preview": "[\n  Mint Shard × 12,\n  Tough Gunk × 5,\n  Flower Petal × 8\n]"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Domain/Inventory/Inventory.cs",
+        "startContains": "public IReadOnlyCollection<InventoryItemQuantity> GetItems()",
+        "takeLines": 12
+      }
+    },
+    {
+      "id": "application-result",
+      "order": 8,
+      "title": "Application construye el resultado",
+      "shortLabel": "Query Result",
+      "generalStage": "Application",
+      "hexRole": "Use Case result",
+      "implementation": "GetInventoryResult.Success",
+      "explanation": "Application traduce el snapshot de Domain a InventoryItemResult. Observa que no aparece IInventoryRepository.SaveAsync.",
+      "architectureId": "UC-INVENTORY-001 result",
+      "directionNote": "El flujo de runtime comienza a regresar al adapter que lo inició.",
+      "position": {
+        "x": 50,
+        "y": 76
+      },
+      "payload": {
+        "label": "GetInventoryResult",
+        "type": "Application result",
+        "preview": "Status = Success\nItems = 3"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/UseCases/GetInventory/GetInventoryResult.cs",
+        "startContains": "public static GetInventoryResult Success(",
+        "takeLines": 18
+      }
+    },
+    {
+      "id": "http-adapter-out",
+      "order": 9,
+      "title": "El adapter traduce el resultado a HTTP",
+      "shortLabel": "Inbound Adapter",
+      "generalStage": "Infrastructure / Entrada",
+      "hexRole": "Inbound Adapter",
+      "implementation": "GetInventoryEndpoint result mapping",
+      "explanation": "El adapter decide que Success es HTTP 200 y transforma InventoryItemResult a DTOs HTTP.",
+      "architectureId": "ADAPTER-IN-HTTP-INVENTORY-001",
+      "directionNote": "La semántica HTTP reaparece sólo en el borde.",
+      "position": {
+        "x": 28,
+        "y": 76
+      },
+      "payload": {
+        "label": "GetInventoryHttpResponse",
+        "type": "HTTP DTO",
+        "preview": "PlayerId = 1111...\nItems = [ ... ]"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Inbound.Http/GetInventory/GetInventoryEndpoint.cs",
+        "startContains": "return result.Status switch",
+        "takeLines": 25
+      }
+    },
+    {
+      "id": "http-response",
+      "order": 10,
+      "title": "El cliente recibe el inventario",
+      "shortLabel": "HTTP 200",
+      "generalStage": "Exterior del hexágono",
+      "hexRole": "Driving actor receives result",
+      "implementation": "200 OK",
+      "explanation": "La Query termina sin modificar Inventory y sin escribir en la base de datos.",
+      "architectureId": "UC-INVENTORY-001 completed",
+      "directionNote": "Fin del flujo de runtime.",
+      "position": {
+        "x": 5,
+        "y": 76
+      },
+      "payload": {
+        "label": "HTTP Response",
+        "type": "200 OK",
+        "preview": "{\n  \"playerId\": \"1111...\",\n  \"items\": [ ... ]\n}"
+      }
+    }
+  ],
+  "projects": [
+    {
+      "id": "host-api",
+      "name": "Grounded.Hexagonal.Host.Api",
+      "shortName": "Host.Api",
+      "pathPrefix": "src/Grounded.Hexagonal.Host.Api/",
+      "responsibility": "Composition Root: selecciona adapters y conecta implementaciones con ports.",
+      "x": 10,
+      "y": 18
+    },
+    {
+      "id": "in-http",
+      "name": "Grounded.Hexagonal.Adapters.Inbound.Http",
+      "shortName": "Inbound.Http",
+      "pathPrefix": "src/Grounded.Hexagonal.Adapters.Inbound.Http/",
+      "responsibility": "Traduce HTTP ↔ modelos y resultados de Application.",
+      "x": 31,
+      "y": 18
+    },
+    {
+      "id": "application",
+      "name": "Grounded.Hexagonal.Application",
+      "shortName": "Application",
+      "pathPrefix": "src/Grounded.Hexagonal.Application/",
+      "responsibility": "Casos de uso, input/output ports y orquestación.",
+      "x": 52,
+      "y": 45
+    },
+    {
+      "id": "domain",
+      "name": "Grounded.Hexagonal.Domain",
+      "shortName": "Domain",
+      "pathPrefix": "src/Grounded.Hexagonal.Domain/",
+      "responsibility": "Modelo y reglas de negocio puras.",
+      "x": 78,
+      "y": 45
+    },
+    {
+      "id": "out-persistence",
+      "name": "Grounded.Hexagonal.Adapters.Outbound.Persistence",
+      "shortName": "Outbound.Persistence",
+      "pathPrefix": "src/Grounded.Hexagonal.Adapters.Outbound.Persistence/",
+      "responsibility": "Implementaciones de persistence ports: InMemory y EF Core/SQLite.",
+      "x": 31,
+      "y": 75
+    }
+  ],
+  "projectEdges": [
+    {
+      "from": "host-api",
+      "to": "in-http"
+    },
+    {
+      "from": "host-api",
+      "to": "application"
+    },
+    {
+      "from": "host-api",
+      "to": "out-persistence"
+    },
+    {
+      "from": "in-http",
+      "to": "application"
+    },
+    {
+      "from": "application",
+      "to": "domain"
+    },
+    {
+      "from": "out-persistence",
+      "to": "application"
+    },
+    {
+      "from": "out-persistence",
+      "to": "domain"
+    }
+  ]
+}

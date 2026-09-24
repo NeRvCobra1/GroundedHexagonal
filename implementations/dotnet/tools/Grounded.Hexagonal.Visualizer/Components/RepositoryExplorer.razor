@@ -1,0 +1,618 @@
+@inject RepositoryMapService RepositoryMapService
+@inject SourceSnippetService SourceSnippetService
+
+@if (_snapshot is null)
+{
+    <section class="repo-loading panel">
+        <strong>Construyendo mapa físico…</strong>
+        <span>El visualizador está leyendo implementations/dotnet en modo read-only.</span>
+    </section>
+}
+else
+{
+    <section class="repository-v3">
+        <div class="repo-v3-heading">
+            <div>
+                <div class="eyebrow">PHYSICAL REPOSITORY MAP · READ ONLY</div>
+                <h2>Del repositorio al símbolo C#</h2>
+                <p>
+                    Navega la estructura real sin depender de metadata duplicada. El mapa se construye leyendo carpetas,
+                    archivos y declaraciones C# de <code>implementations/dotnet</code>.
+                </p>
+            </div>
+            <div class="repo-live-chip @(_followFlow ? "following" : "manual")">
+                <span></span>
+                @(_followFlow ? "Siguiendo el flujo activo" : "Exploración manual")
+            </div>
+        </div>
+
+        <div class="repo-metrics" aria-label="Resumen físico del repositorio">
+            <div><span>Áreas</span><strong>@_snapshot.Metrics.Areas</strong></div>
+            <div><span>Proyectos</span><strong>@_snapshot.Metrics.Projects</strong></div>
+            <div><span>Carpetas</span><strong>@_snapshot.Metrics.Folders</strong></div>
+            <div><span>Archivos</span><strong>@_snapshot.Metrics.Files</strong></div>
+            <div><span>C#</span><strong>@_snapshot.Metrics.CSharpFiles</strong></div>
+            <div><span>Símbolos</span><strong>@_snapshot.Metrics.Symbols</strong></div>
+        </div>
+
+        <div class="repo-flow-link">
+            <div>
+                <span>FLOW → PHYSICAL MAP</span>
+                <strong>@(string.IsNullOrWhiteSpace(ActiveFilePath) ? "Paso conceptual / exterior" : ActiveFilePath)</strong>
+                <small>@ScenarioLabel · @ActiveStepLabel</small>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(ActiveFilePath))
+            {
+                <button class="ghost-button" @onclick="FollowActiveFlowAsync">
+                    ◎ Abrir archivo del paso actual
+                </button>
+            }
+        </div>
+
+        <div class="repo-explorer-grid">
+            <aside class="repo-browser panel">
+                <div class="repo-pane-heading">
+                    <div>
+                        <span>REPOSITORY TREE</span>
+                        <strong>Áreas y proyectos</strong>
+                    </div>
+                </div>
+
+                <div class="repo-area-tabs">
+                    @foreach (var area in _snapshot.Areas)
+                    {
+                        <button class="repo-area-button @IsSelectedArea(area)"
+                                @onclick="() => SelectScopeAsync(area)">
+                            <span>@GetNodeIcon(area)</span>
+                            <strong>@area.Name</strong>
+                            <small>@area.FileCount files</small>
+                        </button>
+                    }
+                </div>
+
+                @if (_selectedArea is not null)
+                {
+                    <div class="repo-project-list">
+                        <div class="repo-section-label">SCOPE</div>
+                        <button class="repo-project-button @IsSelectedScope(_selectedArea)"
+                                @onclick="() => SelectScopeAsync(_selectedArea)">
+                            <span>@GetNodeIcon(_selectedArea)</span>
+                            <div><strong>@_selectedArea.Name</strong><small>@_selectedArea.ArchitectureRole</small></div>
+                        </button>
+
+                        @foreach (var child in GetScopeChoices(_selectedArea))
+                        {
+                            <button class="repo-project-button @IsSelectedScope(child)"
+                                    @onclick="() => SelectScopeAsync(child)">
+                                <span>@GetNodeIcon(child)</span>
+                                <div><strong>@child.Name</strong><small>@child.ArchitectureRole · @child.FileCount files</small></div>
+                            </button>
+                        }
+                    </div>
+                }
+
+                <div class="repo-search-box">
+                    <span>⌕</span>
+                    <input placeholder="Buscar archivo, carpeta o símbolo…"
+                           @bind="_searchText"
+                           @bind:event="oninput" />
+                </div>
+
+                <div class="repo-tree-list">
+                    @if (!string.IsNullOrWhiteSpace(_searchText))
+                    {
+                        var results = RepositoryMapService.Search(_snapshot, _searchText);
+
+                        <div class="repo-section-label">@results.Count RESULTADOS</div>
+                        @foreach (var node in results)
+                        {
+                            <button class="repo-tree-row @GetSelectedNodeClass(node) @GetFlowLinkedClass(node)"
+                                    style="--tree-depth:0"
+                                    @onclick="() => SelectNodeAsync(node, manual: true)">
+                                <span class="repo-tree-icon">@GetNodeIcon(node)</span>
+                                <span class="repo-tree-copy"><strong>@node.Name</strong><small>@node.RelativePath</small></span>
+                                <span class="repo-tree-kind">@node.Kind</span>
+                            </button>
+                        }
+                    }
+                    else if (_selectedScope is not null)
+                    {
+                        @foreach (var item in FlattenScope(_selectedScope))
+                        {
+                            <button class="repo-tree-row @GetSelectedNodeClass(item.Node) @GetFlowLinkedClass(item.Node)"
+                                    style="@GetTreeDepthStyle(item.Depth)"
+                                    @onclick="() => SelectNodeAsync(item.Node, manual: true)">
+                                <span class="repo-tree-icon">@GetNodeIcon(item.Node)</span>
+                                <span class="repo-tree-copy"><strong>@item.Node.Name</strong><small>@GetTreeSubtitle(item.Node)</small></span>
+                                @if (item.Node.IsFile && item.Node.Symbols.Count > 0)
+                                {
+                                    <span class="repo-symbol-count">@item.Node.Symbols.Count</span>
+                                }
+                            </button>
+                        }
+                    }
+                </div>
+            </aside>
+
+            <section class="repo-physical-panel panel">
+                <div class="repo-pane-heading wide">
+                    <div>
+                        <span>SELECTED PHYSICAL BRANCH</span>
+                        <strong>@(_selectedNode?.Name ?? "Selecciona un nodo")</strong>
+                    </div>
+                    @if (_selectedNode is not null)
+                    {
+                        <div class="repo-role-badge @GetArchitectureRoleClass(_selectedNode)">@_selectedNode.ArchitectureRole</div>
+                    }
+                </div>
+
+                @if (_selectedNode is not null)
+                {
+                    <div class="repo-lineage" aria-label="Ruta física del nodo seleccionado">
+                        @foreach (var entry in GetSelectedLineage())
+                        {
+                            <button class="repo-lineage-node @entry.Kind @GetFlowLinkedClass(entry)"
+                                    @onclick="() => SelectNodeAsync(entry, manual: true)">
+                                <span>@GetNodeIcon(entry)</span>
+                                <div><small>@entry.Kind</small><strong>@entry.Name</strong></div>
+                            </button>
+
+                            @if (!ReferenceEquals(entry, GetSelectedLineage().Last()))
+                            {
+                                <div class="repo-lineage-connector"><span></span>→</div>
+                            }
+                        }
+
+                        @if (_selectedSymbol is not null)
+                        {
+                            <div class="repo-lineage-connector"><span></span>→</div>
+                            <button class="repo-lineage-node symbol active">
+                                <span>ƒ</span>
+                                <div><small>@_selectedSymbol.Kind · L@_selectedSymbol.LineNumber</small><strong>@_selectedSymbol.Name</strong></div>
+                            </button>
+                        }
+                    </div>
+
+                    <div class="repo-node-overview">
+                        <div class="repo-node-primary">
+                            <span class="repo-node-big-icon">@GetNodeIcon(_selectedNode)</span>
+                            <div>
+                                <span>@GetNodeCaption(_selectedNode)</span>
+                                <h3>@_selectedNode.Name</h3>
+                                <code>@_selectedNode.RelativePath</code>
+                            </div>
+                        </div>
+                        <div class="repo-node-facts">
+                            <div><span>Rol</span><strong>@_selectedNode.ArchitectureRole</strong></div>
+                            <div><span>Archivos debajo</span><strong>@_selectedNode.FileCount</strong></div>
+                            <div><span>Líneas</span><strong>@(_selectedNode.IsFile ? _selectedNode.LineCount : 0)</strong></div>
+                            <div><span>Símbolos C#</span><strong>@_selectedNode.Symbols.Count</strong></div>
+                        </div>
+                    </div>
+
+                    @if (_selectedNode.Children.Count > 0)
+                    {
+                        <div class="repo-children-section">
+                            <div class="repo-section-title">
+                                <span>CHILDREN</span>
+                                <strong>Qué cuelga físicamente de este nodo</strong>
+                            </div>
+                            <div class="repo-child-grid">
+                                @foreach (var child in _selectedNode.Children.Take(24))
+                                {
+                                    <button class="repo-child-card @GetArchitectureRoleClass(child) @GetFlowLinkedClass(child)"
+                                            @onclick="() => SelectNodeAsync(child, manual: true)">
+                                        <span>@GetNodeIcon(child)</span>
+                                        <div><strong>@child.Name</strong><small>@GetTreeSubtitle(child)</small></div>
+                                        <em>@(child.IsFile ? child.Extension.TrimStart('.') : $"{child.FileCount} files")</em>
+                                    </button>
+                                }
+                            </div>
+                            @if (_selectedNode.Children.Count > 24)
+                            {
+                                <div class="repo-truncated-note">Mostrando 24 de @_selectedNode.Children.Count hijos. Usa el árbol o búsqueda para navegar el resto.</div>
+                            }
+                        </div>
+                    }
+                }
+            </section>
+
+            <aside class="repo-symbol-panel panel">
+                <div class="repo-pane-heading">
+                    <div>
+                        <span>C# SYMBOLS</span>
+                        <strong>Clase → método</strong>
+                    </div>
+                </div>
+
+                @if (_selectedNode is { IsFile: true })
+                {
+                    <div class="repo-file-meta">
+                        <span>@_selectedNode.Extension</span>
+                        <strong>@_selectedNode.LineCount lines</strong>
+                    </div>
+
+                    @if (_selectedNode.Symbols.Count > 0)
+                    {
+                        <div class="repo-symbol-list">
+                            @foreach (var symbol in _selectedNode.Symbols)
+                            {
+                                <button class="repo-symbol-row @GetSelectedSymbolClass(symbol)"
+                                        @onclick="() => SelectSymbolAsync(symbol)">
+                                    <span class="repo-symbol-kind">@GetSymbolIcon(symbol)</span>
+                                    <div><strong>@symbol.Name</strong><small>@symbol.Kind · line @symbol.LineNumber</small></div>
+                                </button>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="repo-empty-pane">
+                            <strong>Sin símbolos C# detectables</strong>
+                            <span>El archivo sigue siendo navegable y puede verse abajo.</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="repo-empty-pane">
+                        <strong>Selecciona un archivo</strong>
+                        <span>Los tipos y métodos aparecerán aquí.</span>
+                    </div>
+                }
+            </aside>
+        </div>
+
+        <section class="repo-source-view panel">
+            <div class="repo-pane-heading wide">
+                <div>
+                    <span>PHYSICAL SOURCE · READ ONLY</span>
+                    <strong>@(_selectedSymbol is null ? "Archivo seleccionado" : $"Símbolo: {_selectedSymbol.Name}")</strong>
+                </div>
+                @if (_selectedNode is { IsFile: true })
+                {
+                    <code>@_selectedNode.RelativePath</code>
+                }
+            </div>
+
+            @if (_repositorySnippet.IsAvailable)
+            {
+                <div class="code-window repository-code-window">
+                    @foreach (var line in _repositorySnippet.Lines)
+                    {
+                        var highlight = _selectedSymbol is not null && line.Number == _selectedSymbol.LineNumber;
+                        <div class="code-line @(highlight ? "symbol-line" : string.Empty)">
+                            <span class="line-number">@line.Number</span>
+                            <code>@line.Text</code>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="code-empty">
+                    <strong>Selecciona un archivo para inspeccionarlo.</strong>
+                    <p>@_repositorySnippet.Message</p>
+                </div>
+            }
+        </section>
+    </section>
+}
+
+@code {
+    [Parameter] public string? ActiveFilePath { get; set; }
+
+    [Parameter] public string? ActiveSymbol { get; set; }
+
+    [Parameter] public string ScenarioLabel { get; set; } = string.Empty;
+
+    [Parameter] public string ActiveStepLabel { get; set; } = string.Empty;
+
+    private RepositoryMapSnapshot? _snapshot;
+    private RepositoryNode? _selectedArea;
+    private RepositoryNode? _selectedScope;
+    private RepositoryNode? _selectedNode;
+    private RepositoryCodeSymbol? _selectedSymbol;
+    private SourceSnippet _repositorySnippet = SourceSnippet.Empty("Selecciona un archivo.");
+    private string _searchText = string.Empty;
+    private string? _lastActiveFilePath;
+    private string? _lastActiveSymbol;
+    private bool _followFlow = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _snapshot = await RepositoryMapService.GetSnapshotAsync();
+
+        if (_snapshot.Areas.Count > 0)
+        {
+            _selectedArea = _snapshot.Areas.FirstOrDefault(area => area.Name.Equals("src", StringComparison.OrdinalIgnoreCase))
+                ?? _snapshot.Areas[0];
+            _selectedScope = GetScopeChoices(_selectedArea).FirstOrDefault() ?? _selectedArea;
+            _selectedNode = _selectedScope;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_snapshot is null || !_followFlow || string.IsNullOrWhiteSpace(ActiveFilePath))
+        {
+            return;
+        }
+
+        var fileChanged = !string.Equals(
+            _lastActiveFilePath,
+            ActiveFilePath,
+            StringComparison.OrdinalIgnoreCase);
+        var symbolChanged = !string.Equals(
+            _lastActiveSymbol,
+            ActiveSymbol,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!fileChanged && !symbolChanged)
+        {
+            return;
+        }
+
+        _lastActiveFilePath = ActiveFilePath;
+        _lastActiveSymbol = ActiveSymbol;
+        await SelectFlowTargetAsync();
+    }
+
+    private async Task FollowActiveFlowAsync()
+    {
+        _followFlow = true;
+        _lastActiveFilePath = ActiveFilePath;
+        _lastActiveSymbol = ActiveSymbol;
+        await SelectFlowTargetAsync();
+    }
+
+    private async Task SelectFlowTargetAsync()
+    {
+        if (_snapshot is null || string.IsNullOrWhiteSpace(ActiveFilePath))
+        {
+            return;
+        }
+
+        var node = RepositoryMapService.FindNode(_snapshot, ActiveFilePath);
+
+        if (node is null)
+        {
+            return;
+        }
+
+        await SelectNodeAsync(node, manual: false);
+        var requestedSymbol = ExtractSymbolName(ActiveSymbol);
+
+        if (!string.IsNullOrWhiteSpace(requestedSymbol))
+        {
+            var symbol = node.Symbols.FirstOrDefault(item =>
+                item.Name.Equals(requestedSymbol, StringComparison.OrdinalIgnoreCase));
+
+            if (symbol is not null)
+            {
+                await SelectSymbolAsync(symbol);
+            }
+        }
+    }
+
+    private async Task SelectScopeAsync(RepositoryNode node)
+    {
+        _searchText = string.Empty;
+        _followFlow = false;
+        SetAreaFromNode(node);
+        _selectedScope = node;
+        await SelectNodeAsync(node, manual: false);
+    }
+
+    private async Task SelectNodeAsync(RepositoryNode node, bool manual)
+    {
+        if (_snapshot is null)
+        {
+            return;
+        }
+
+        if (manual)
+        {
+            _followFlow = false;
+        }
+
+        _selectedNode = node;
+        _selectedSymbol = null;
+        SetAreaFromNode(node);
+
+        if (!string.IsNullOrWhiteSpace(node.ProjectPath) &&
+            _snapshot.NodesByPath.TryGetValue(node.ProjectPath, out var project))
+        {
+            _selectedScope = project;
+        }
+        else if (node.Kind.Equals("project", StringComparison.OrdinalIgnoreCase) ||
+                 node.Kind.Equals("area", StringComparison.OrdinalIgnoreCase))
+        {
+            _selectedScope = node;
+        }
+
+        _repositorySnippet = node.IsFile
+            ? await SourceSnippetService.ReadFileSectionAsync(node.RelativePath, 1, 90)
+            : SourceSnippet.Empty("Este nodo es una carpeta/proyecto. Selecciona un archivo para ver su contenido.");
+    }
+
+    private async Task SelectSymbolAsync(RepositoryCodeSymbol symbol)
+    {
+        if (_selectedNode is not { IsFile: true })
+        {
+            return;
+        }
+
+        _selectedSymbol = symbol;
+        _repositorySnippet = await SourceSnippetService.ReadAroundLineAsync(
+            _selectedNode.RelativePath,
+            symbol.LineNumber,
+            16);
+    }
+
+    private void SetAreaFromNode(RepositoryNode node)
+    {
+        if (_snapshot is null)
+        {
+            return;
+        }
+
+        _selectedArea = _snapshot.Areas.FirstOrDefault(area =>
+            node.RelativePath.Equals(area.RelativePath, StringComparison.OrdinalIgnoreCase) ||
+            node.RelativePath.StartsWith(area.RelativePath + "/", StringComparison.OrdinalIgnoreCase))
+            ?? _selectedArea;
+    }
+
+    private IReadOnlyList<RepositoryNode> GetScopeChoices(RepositoryNode area) =>
+        area.Children
+            .Where(node =>
+                node.Kind.Equals("project", StringComparison.OrdinalIgnoreCase) ||
+                node.Kind.Equals("folder", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(node => node.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private IReadOnlyList<RepositoryTreeItem> FlattenScope(RepositoryNode scope)
+    {
+        var items = new List<RepositoryTreeItem>();
+
+        foreach (var child in scope.Children)
+        {
+            AppendNode(items, child, 0);
+        }
+
+        return items;
+    }
+
+    private static void AppendNode(
+        ICollection<RepositoryTreeItem> items,
+        RepositoryNode node,
+        int depth)
+    {
+        items.Add(new RepositoryTreeItem(node, depth));
+
+        foreach (var child in node.Children)
+        {
+            AppendNode(items, child, depth + 1);
+        }
+    }
+
+    private IReadOnlyList<RepositoryNode> GetSelectedLineage() =>
+        _snapshot is null
+            ? []
+            : RepositoryMapService.GetLineage(_snapshot, _selectedNode);
+
+    private string IsSelectedArea(RepositoryNode node) =>
+        ReferenceEquals(node, _selectedArea) ? "active" : string.Empty;
+
+    private string IsSelectedScope(RepositoryNode node) =>
+        ReferenceEquals(node, _selectedScope) ? "active" : string.Empty;
+
+    private string GetSelectedNodeClass(RepositoryNode node) =>
+        ReferenceEquals(node, _selectedNode) ? "active" : string.Empty;
+
+    private string GetFlowLinkedClass(RepositoryNode node) =>
+        !string.IsNullOrWhiteSpace(ActiveFilePath) &&
+        node.RelativePath.Equals(ActiveFilePath, StringComparison.OrdinalIgnoreCase)
+            ? "flow-linked"
+            : string.Empty;
+
+    private string GetSelectedSymbolClass(RepositoryCodeSymbol symbol) =>
+        ReferenceEquals(symbol, _selectedSymbol) ? "active" : string.Empty;
+
+
+    private static string GetTreeDepthStyle(int depth) =>
+        $"--tree-depth:{Math.Clamp(depth, 0, 12)}";
+
+    private static string GetTreeSubtitle(RepositoryNode node)
+    {
+        if (node.IsFile)
+        {
+            return node.Symbols.Count > 0
+                ? $"{node.ArchitectureRole} · {node.Symbols.Count} symbols"
+                : node.ArchitectureRole;
+        }
+
+        return $"{node.ArchitectureRole} · {node.FileCount} files";
+    }
+
+    private static string GetNodeCaption(RepositoryNode node) =>
+        node.Kind switch
+        {
+            "area" => "Repository area",
+            "project" => "C# project",
+            "folder" => "Physical folder",
+            "file" => "Physical file",
+            _ => "Repository node"
+        };
+
+    private static string GetNodeIcon(RepositoryNode node)
+    {
+        if (node.Kind.Equals("area", StringComparison.OrdinalIgnoreCase)) return "⌂";
+        if (node.Kind.Equals("project", StringComparison.OrdinalIgnoreCase)) return "◇";
+        if (node.Kind.Equals("folder", StringComparison.OrdinalIgnoreCase)) return "▱";
+
+        return node.Extension.ToLowerInvariant() switch
+        {
+            ".cs" => "C#",
+            ".csproj" => "◆",
+            ".razor" => "R",
+            ".md" => "M",
+            ".json" => "{}",
+            ".js" => "JS",
+            ".css" => "CSS",
+            _ => "▤"
+        };
+    }
+
+    private static string GetSymbolIcon(RepositoryCodeSymbol symbol) =>
+        symbol.Kind switch
+        {
+            "class" => "C",
+            "interface" => "I",
+            "record" => "R",
+            "struct" => "S",
+            "enum" => "E",
+            "constructor" => "◇",
+            "property" => "P",
+            _ => "ƒ"
+        };
+
+    private static string GetArchitectureRoleClass(RepositoryNode node)
+    {
+        var role = node.ArchitectureRole.ToLowerInvariant();
+
+        if (role.Contains("domain", StringComparison.Ordinal)) return "role-domain";
+        if (role.Contains("inbound", StringComparison.Ordinal)) return "role-inbound";
+        if (role.Contains("outbound", StringComparison.Ordinal)) return "role-outbound";
+        if (role.Contains("application", StringComparison.Ordinal) || role.Contains("port", StringComparison.Ordinal)) return "role-core";
+        if (role.Contains("composition", StringComparison.Ordinal)) return "role-host";
+        if (role.Contains("test", StringComparison.Ordinal) || role.Contains("verification", StringComparison.Ordinal)) return "role-test";
+        if (role.Contains("documentation", StringComparison.Ordinal)) return "role-docs";
+        if (role.Contains("tool", StringComparison.Ordinal)) return "role-tools";
+
+        return "role-neutral";
+    }
+
+    private static string ExtractSymbolName(string? implementation)
+    {
+        if (string.IsNullOrWhiteSpace(implementation))
+        {
+            return string.Empty;
+        }
+
+        var value = implementation.Trim();
+        var parenIndex = value.IndexOf('(');
+
+        if (parenIndex >= 0)
+        {
+            value = value[..parenIndex];
+        }
+
+        var lastDot = value.LastIndexOf('.');
+        return lastDot >= 0 ? value[(lastDot + 1)..] : value;
+    }
+
+    private sealed record RepositoryTreeItem(
+        RepositoryNode Node,
+        int Depth);
+}

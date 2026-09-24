@@ -1,0 +1,467 @@
+{
+  "id": "process-food-spoilage",
+  "useCaseId": "UC-SPOILAGE-001",
+  "name": "ProcessFoodSpoilage · ciclo automático",
+  "navigationLabel": "ProcessFoodSpoilage",
+  "description": "Visualiza un caso de uso que no nace en HTTP: un Background Worker dispara el proceso, Application consulta tiempo y alimentos por output ports, Domain aplica la regla de spoilage y sólo se persisten cambios reales.",
+  "playbackNote": "Este flujo demuestra que Presentation/HTTP no es el concepto de entrada en Hexagonal Architecture. Aquí el driving adapter es un BackgroundService. También demuestra que un output adapter puede ser un reloj y no una base de datos.",
+  "flowType": "Background Command",
+  "trigger": "Background Worker",
+  "changesState": true,
+  "keyLesson": "Los triggers pueden ser Workers y los output adapters pueden representar capacidades como tiempo, no sólo persistencia.",
+  "steps": [
+    {
+      "id": "schedule-trigger",
+      "order": 1,
+      "title": "Llega el momento del siguiente ciclo",
+      "shortLabel": "Scheduler Tick",
+      "generalStage": "Exterior del hexágono",
+      "hexRole": "Trigger / Driving actor",
+      "implementation": "FoodSpoilageWorker interval",
+      "explanation": "No hay request HTTP. El paso del tiempo y la programación del worker disparan el caso de uso.",
+      "architectureId": "UC-SPOILAGE-001 trigger",
+      "directionNote": "Inicio del flujo automático de runtime.",
+      "position": {
+        "x": 5,
+        "y": 14
+      },
+      "payload": {
+        "label": "Worker cycle",
+        "type": "Scheduled trigger",
+        "preview": "Interval elapsed"
+      }
+    },
+    {
+      "id": "worker-adapter",
+      "order": 2,
+      "title": "El Worker actúa como inbound adapter",
+      "shortLabel": "Inbound Worker",
+      "generalStage": "Infrastructure / Entrada",
+      "hexRole": "Inbound Adapter",
+      "implementation": "FoodSpoilageWorker.RunOnceAsync",
+      "explanation": "El BackgroundService posee scheduling y logging, pero no la regla de spoilage. Sólo crea el command e invoca el input port.",
+      "architectureId": "Inbound adapter · UC-SPOILAGE-001",
+      "directionNote": "Runtime entra al core sin pasar por HTTP.",
+      "position": {
+        "x": 18,
+        "y": 14
+      },
+      "payload": {
+        "label": "ProcessFoodSpoilageCommand",
+        "type": "Application command",
+        "preview": "{ }  // no caller data required"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Inbound.Worker/FoodSpoilage/FoodSpoilageWorker.cs",
+        "startContains": "public async Task<ProcessFoodSpoilageResult> RunOnceAsync(",
+        "takeLines": 22
+      }
+    },
+    {
+      "id": "input-port",
+      "order": 3,
+      "title": "El proceso cruza el Input Port",
+      "shortLabel": "Input Port",
+      "generalStage": "Application",
+      "hexRole": "Inbound Port / Input Port",
+      "implementation": "IProcessFoodSpoilageUseCase",
+      "explanation": "El Worker conoce el contrato del caso de uso. Application no necesita conocer BackgroundService ni timers.",
+      "architectureId": "PORT-IN-SPOILAGE-001",
+      "directionNote": "La dependencia del inbound adapter apunta hacia Application.",
+      "position": {
+        "x": 32,
+        "y": 14
+      },
+      "payload": {
+        "label": "ProcessFoodSpoilageCommand",
+        "type": "Application input model",
+        "preview": "Empty command marks the use-case boundary"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/Ports/Inbound/IProcessFoodSpoilageUseCase.cs",
+        "startContains": "public interface IProcessFoodSpoilageUseCase",
+        "takeLines": 8
+      }
+    },
+    {
+      "id": "handler",
+      "order": 4,
+      "title": "Application coordina el ciclo",
+      "shortLabel": "Use Case",
+      "generalStage": "Application",
+      "hexRole": "Use Case / Application Service",
+      "implementation": "ProcessFoodSpoilageHandler.ExecuteAsync",
+      "explanation": "El handler necesita dos capacidades externas: saber la hora actual y leer/guardar alimentos. Las pide mediante output ports.",
+      "architectureId": "UC-SPOILAGE-001",
+      "directionNote": "Application orquesta; Domain conservará la regla de negocio.",
+      "position": {
+        "x": 46,
+        "y": 14
+      },
+      "payload": {
+        "label": "Spoilage orchestration",
+        "type": "Application context",
+        "preview": "IClock\n+ IFoodRepository"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/UseCases/ProcessFoodSpoilage/ProcessFoodSpoilageHandler.cs",
+        "startContains": "public async Task<ProcessFoodSpoilageResult> ExecuteAsync(",
+        "takeLines": 42
+      }
+    },
+    {
+      "id": "clock-port",
+      "order": 5,
+      "title": "Application solicita la hora actual",
+      "shortLabel": "Output Port",
+      "generalStage": "Application",
+      "hexRole": "Outbound Port / Output Port",
+      "implementation": "IClock.UtcNow",
+      "explanation": "El tiempo del sistema es una dependencia externa. Application declara qué necesita sin llamar directamente DateTimeOffset.UtcNow.",
+      "architectureId": "PORT-OUT-CLOCK-001",
+      "directionNote": "Runtime sale por un output port hacia una capacidad de infraestructura.",
+      "position": {
+        "x": 61,
+        "y": 14
+      },
+      "payload": {
+        "label": "Current time request",
+        "type": "Capability request",
+        "preview": "IClock.UtcNow"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/Ports/Outbound/IClock.cs",
+        "startContains": "public interface IClock",
+        "takeLines": 8
+      }
+    },
+    {
+      "id": "clock-adapter",
+      "order": 6,
+      "title": "SystemClock consulta el reloj real",
+      "shortLabel": "Time Adapter",
+      "generalStage": "Infrastructure / Salida",
+      "hexRole": "Outbound Adapter",
+      "implementation": "SystemClock.UtcNow",
+      "explanation": "Este adapter satisface IClock con DateTimeOffset.UtcNow. Es infraestructura aunque no sea una base de datos.",
+      "architectureId": "PORT-OUT-CLOCK-001 implementation",
+      "directionNote": "El adapter implementa el contrato que Application posee.",
+      "position": {
+        "x": 81,
+        "y": 14
+      },
+      "payload": {
+        "label": "DateTimeOffset",
+        "type": "UTC time",
+        "preview": "2026-09-21T07:45:00+00:00"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Outbound.Time/SystemClock.cs",
+        "startContains": "public sealed class SystemClock",
+        "takeLines": 8
+      }
+    },
+    {
+      "id": "food-port-load",
+      "order": 7,
+      "title": "Application solicita los alimentos",
+      "shortLabel": "Output Port",
+      "generalStage": "Application",
+      "hexRole": "Outbound Port / Output Port",
+      "implementation": "IFoodRepository.GetAllAsync",
+      "explanation": "El caso de uso necesita la colección persistida de Food, pero desconoce si viene de SQLite o memoria.",
+      "architectureId": "PORT-OUT-FOOD-001",
+      "directionNote": "Segundo output port del mismo use case.",
+      "position": {
+        "x": 61,
+        "y": 38
+      },
+      "payload": {
+        "label": "GetAll foods",
+        "type": "Persistence capability",
+        "preview": "IFoodRepository.GetAllAsync()"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/Ports/Outbound/IFoodRepository.cs",
+        "startContains": "Task<IReadOnlyCollection<Food>> GetAllAsync(",
+        "takeLines": 9
+      }
+    },
+    {
+      "id": "food-adapter-load",
+      "order": 8,
+      "title": "EF Core rehidrata Food",
+      "shortLabel": "Persistence Adapter",
+      "generalStage": "Infrastructure / Salida",
+      "hexRole": "Outbound Adapter",
+      "implementation": "EfCoreFoodRepository.GetAllAsync",
+      "explanation": "SQLite entrega records; el adapter los mapea nuevamente a entidades Food del Domain.",
+      "architectureId": "PORT-OUT-FOOD-001 implementation",
+      "directionNote": "Infraestructura devuelve objetos del modelo de negocio.",
+      "position": {
+        "x": 81,
+        "y": 38
+      },
+      "payload": {
+        "label": "IReadOnlyCollection<Food>",
+        "type": "Domain entities",
+        "preview": "Food A: Fresh, SpoilsAt <= now\nFood B: Fresh, SpoilsAt > now"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Outbound.Persistence/EntityFrameworkCore/EfCoreFoodRepository.cs",
+        "startContains": "public async Task<IReadOnlyCollection<Food>> GetAllAsync(",
+        "takeLines": 25
+      }
+    },
+    {
+      "id": "domain-rule",
+      "order": 9,
+      "title": "Domain decide qué comida se echa a perder",
+      "shortLabel": "Domain Rule",
+      "generalStage": "Domain",
+      "hexRole": "Domain Entity / business rule",
+      "implementation": "Food.AdvanceSpoilage(currentTime)",
+      "explanation": "RULE-SPOILAGE-001 vive aquí: Fresh pasa a Spoiled cuando currentTime >= SpoilsAt. Un Food ya Spoiled permanece Spoiled.",
+      "architectureId": "RULE-SPOILAGE-001",
+      "directionNote": "La decisión de negocio no sabe de Worker, reloj del sistema, EF Core ni SQLite.",
+      "position": {
+        "x": 46,
+        "y": 60
+      },
+      "payload": {
+        "label": "Food state transition",
+        "type": "Domain state",
+        "preview": "Fresh  →  Spoiled\nchanged = true"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Domain/Food/Food.cs",
+        "startContains": "public bool AdvanceSpoilage(DateTimeOffset currentTime)",
+        "takeLines": 16
+      }
+    },
+    {
+      "id": "food-port-save",
+      "order": 10,
+      "title": "Application persiste sólo los cambios",
+      "shortLabel": "Output Port",
+      "generalStage": "Application",
+      "hexRole": "Outbound Port / Output Port",
+      "implementation": "IFoodRepository.SaveAsync",
+      "explanation": "El handler llama SaveAsync únicamente cuando Domain devolvió true. Los alimentos sin cambio no generan escritura.",
+      "architectureId": "PORT-OUT-FOOD-001",
+      "directionNote": "La intención de persistir vuelve a cruzar el port de Application.",
+      "position": {
+        "x": 61,
+        "y": 82
+      },
+      "payload": {
+        "label": "Changed Food",
+        "type": "Domain Entity",
+        "preview": "State = Spoiled"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/UseCases/ProcessFoodSpoilage/ProcessFoodSpoilageHandler.cs",
+        "startContains": "await _foodRepository.SaveAsync(",
+        "takeLines": 12
+      }
+    },
+    {
+      "id": "food-adapter-save",
+      "order": 11,
+      "title": "EF Core guarda el nuevo estado",
+      "shortLabel": "Persistence Adapter",
+      "generalStage": "Infrastructure / Salida",
+      "hexRole": "Outbound Adapter",
+      "implementation": "EfCoreFoodRepository.SaveAsync",
+      "explanation": "El adapter convierte el estado del Domain a persistencia y ejecuta SaveChangesAsync.",
+      "architectureId": "PORT-OUT-FOOD-001 implementation",
+      "directionNote": "Detalle tecnológico aislado fuera del core.",
+      "position": {
+        "x": 81,
+        "y": 82
+      },
+      "payload": {
+        "label": "SQLite row updated",
+        "type": "Persistence state",
+        "preview": "Foods.State = Spoiled"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Outbound.Persistence/EntityFrameworkCore/EfCoreFoodRepository.cs",
+        "startContains": "public async Task SaveAsync(",
+        "takeLines": 34
+      }
+    },
+    {
+      "id": "application-result",
+      "order": 12,
+      "title": "Application resume el ciclo",
+      "shortLabel": "Use Case Result",
+      "generalStage": "Application",
+      "hexRole": "Use Case result",
+      "implementation": "ProcessFoodSpoilageResult",
+      "explanation": "El caso de uso devuelve cuántos alimentos evaluó y cuántos cambiaron a Spoiled.",
+      "architectureId": "UC-SPOILAGE-001 result",
+      "directionNote": "El runtime regresa al driving adapter.",
+      "position": {
+        "x": 32,
+        "y": 82
+      },
+      "payload": {
+        "label": "ProcessFoodSpoilageResult",
+        "type": "Application result",
+        "preview": "EvaluatedCount = 2\nSpoiledCount = 1"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Application/UseCases/ProcessFoodSpoilage/ProcessFoodSpoilageResult.cs",
+        "startContains": "public sealed record ProcessFoodSpoilageResult(",
+        "takeLines": 6
+      }
+    },
+    {
+      "id": "worker-log",
+      "order": 13,
+      "title": "El Worker registra el resultado",
+      "shortLabel": "Inbound Worker",
+      "generalStage": "Infrastructure / Entrada",
+      "hexRole": "Inbound Adapter",
+      "implementation": "FoodSpoilageWorker logging",
+      "explanation": "Logging vuelve a ser preocupación del adapter. Application sólo devolvió datos del caso de uso.",
+      "architectureId": "Inbound adapter · UC-SPOILAGE-001",
+      "directionNote": "El resultado cruza de regreso al borde que inició el proceso.",
+      "position": {
+        "x": 18,
+        "y": 82
+      },
+      "payload": {
+        "label": "Log entry",
+        "type": "Infrastructure telemetry",
+        "preview": "Evaluated: 2; Spoiled: 1"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Inbound.Worker/FoodSpoilage/FoodSpoilageWorker.cs",
+        "startContains": "_logger.LogInformation(",
+        "takeLines": 9
+      }
+    },
+    {
+      "id": "next-cycle",
+      "order": 14,
+      "title": "El Worker espera el siguiente ciclo",
+      "shortLabel": "Next Cycle",
+      "generalStage": "Exterior del hexágono",
+      "hexRole": "Scheduler / driving mechanism",
+      "implementation": "Task.Delay(_options.Interval)",
+      "explanation": "El scheduling continúa fuera del caso de uso. Después del intervalo, el inbound adapter volverá a invocar el mismo Input Port.",
+      "architectureId": "UC-SPOILAGE-001 cycle complete",
+      "directionNote": "Fin de esta ejecución; el siguiente tick iniciará otra.",
+      "position": {
+        "x": 5,
+        "y": 82
+      },
+      "payload": {
+        "label": "Delay",
+        "type": "Scheduling",
+        "preview": "await Task.Delay(Interval)"
+      },
+      "code": {
+        "filePath": "src/Grounded.Hexagonal.Adapters.Inbound.Worker/FoodSpoilage/FoodSpoilageWorker.cs",
+        "startContains": "while (!stoppingToken.IsCancellationRequested)",
+        "takeLines": 12
+      }
+    }
+  ],
+  "projects": [
+    {
+      "id": "host-worker",
+      "name": "Grounded.Hexagonal.Host.Worker",
+      "shortName": "Host.Worker",
+      "pathPrefix": "src/Grounded.Hexagonal.Host.Worker/",
+      "responsibility": "Composition Root: conecta Worker, Application, Persistence y Time.",
+      "x": 10,
+      "y": 18
+    },
+    {
+      "id": "in-worker",
+      "name": "Grounded.Hexagonal.Adapters.Inbound.Worker",
+      "shortName": "Inbound.Worker",
+      "pathPrefix": "src/Grounded.Hexagonal.Adapters.Inbound.Worker/",
+      "responsibility": "Trigger programado que invoca el input port sin HTTP.",
+      "x": 31,
+      "y": 18
+    },
+    {
+      "id": "application",
+      "name": "Grounded.Hexagonal.Application",
+      "shortName": "Application",
+      "pathPrefix": "src/Grounded.Hexagonal.Application/",
+      "responsibility": "Orquesta tiempo, alimentos y persistencia mediante ports.",
+      "x": 52,
+      "y": 43
+    },
+    {
+      "id": "domain",
+      "name": "Grounded.Hexagonal.Domain",
+      "shortName": "Domain",
+      "pathPrefix": "src/Grounded.Hexagonal.Domain/",
+      "responsibility": "Regla Fresh → Spoiled independiente de infraestructura.",
+      "x": 78,
+      "y": 43
+    },
+    {
+      "id": "out-persistence",
+      "name": "Grounded.Hexagonal.Adapters.Outbound.Persistence",
+      "shortName": "Outbound.Persistence",
+      "pathPrefix": "src/Grounded.Hexagonal.Adapters.Outbound.Persistence/",
+      "responsibility": "Carga y guarda Food mediante EF Core/SQLite o InMemory.",
+      "x": 31,
+      "y": 76
+    },
+    {
+      "id": "out-time",
+      "name": "Grounded.Hexagonal.Adapters.Outbound.Time",
+      "shortName": "Outbound.Time",
+      "pathPrefix": "src/Grounded.Hexagonal.Adapters.Outbound.Time/",
+      "responsibility": "Implementa IClock usando el reloj real del sistema.",
+      "x": 76,
+      "y": 76
+    }
+  ],
+  "projectEdges": [
+    {
+      "from": "host-worker",
+      "to": "in-worker"
+    },
+    {
+      "from": "host-worker",
+      "to": "application"
+    },
+    {
+      "from": "host-worker",
+      "to": "out-persistence"
+    },
+    {
+      "from": "host-worker",
+      "to": "out-time"
+    },
+    {
+      "from": "in-worker",
+      "to": "application"
+    },
+    {
+      "from": "application",
+      "to": "domain"
+    },
+    {
+      "from": "out-persistence",
+      "to": "application"
+    },
+    {
+      "from": "out-persistence",
+      "to": "domain"
+    },
+    {
+      "from": "out-time",
+      "to": "application"
+    }
+  ]
+}
