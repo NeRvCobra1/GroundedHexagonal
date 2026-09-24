@@ -49,6 +49,27 @@ ubicación física en el repositorio
 
 ---
 
+## Uso progresivo recomendado
+
+Para no entrar de golpe a todos los detalles, úsalo en cuatro pases:
+
+```text
+1. capas y roles
+2. Ports / Adapters
+3. componentes y casos de uso
+4. clases, archivos y snippets
+```
+
+La guía detallada está en:
+
+[`../../docs/guides/Visualizer.md`](../../docs/guides/Visualizer.md)
+
+Si eres nuevo en Arquitectura Hexagonal, empieza antes por:
+
+[`../../START_HERE.md`](../../START_HERE.md)
+
+---
+
 ## Execution Flow
 
 Reproduce una secuencia educativa del caso de uso.
@@ -177,6 +198,8 @@ Follow
 
 Los nodos `START` y `END` identifican los extremos del flujo.
 
+El canvas también permite **click + drag** para desplazarse por el mapa, además de scroll, Zoom, Focus, Follow y selección directa de nodos.
+
 ---
 
 ## Limitaciones conocidas
@@ -185,7 +208,7 @@ Los nodos `START` y `END` identifican los extremos del flujo.
 
 El Visualizer no instrumenta `src/` ni escucha una request real.
 
-Una futura herramienta de observabilidad podría usar `ActivitySource`, OpenTelemetry o eventos, pero queda fuera del alcance `v1.0.0`.
+Una futura herramienta de observabilidad podría usar `ActivitySource`, OpenTelemetry o eventos, pero queda fuera del alcance actual.
 
 ### Scanner C# ligero
 
@@ -194,20 +217,6 @@ El Repository Map utiliza detección educativa de símbolos y no reemplaza Rosly
 ### Snapshot del repositorio
 
 El mapa físico se cachea durante la vida del proceso. Reinicia el Visualizer después de cambios estructurales en archivos/carpetas.
-
-### Click + drag del canvas
-
-Se exploró pan por click+drag, pero no se considera interacción garantizada porque no respondió consistentemente en todas las pruebas locales.
-
-Usa como alternativas:
-
-```text
-scroll
-Zoom
-Focus
-Follow
-selección directa de nodos
-```
 
 ---
 
@@ -228,6 +237,7 @@ El Visualizer puede leer source files, pero no forma parte del grafo productivo.
 
 ## Documentación relacionada
 
+- [`../../START_HERE.md`](../../START_HERE.md)
 - [`../../docs/guides/Visualizer.md`](../../docs/guides/Visualizer.md)
 - [`../../docs/architecture/README.md`](../../docs/architecture/README.md)
-- [`../../docs/guides/HowToReadThisImplementation.md`](../../docs/guides/HowToReadThisImplementation.md)
+- [`../../docs/guides/GuidedTours.md`](../../docs/guides/GuidedTours.md)

@@ -1,8 +1,16 @@
 # Estado final — implementación .NET
 
-**Release objetivo:** `v1.0.0`
+**Baseline release:** `v1.0.0`
 
-Este documento define qué se considera terminado en la implementación de referencia .NET del laboratorio.
+La implementación de referencia está cerrada funcional y arquitectónicamente. Después del baseline `v1.0.0` se añadieron dos capas de soporte que no cambian el comportamiento productivo:
+
+```text
+DevOps
+    CI + Continuous Delivery
+
+Educational Experience
+    Learning Path + documentación progresiva
+```
 
 ---
 
@@ -34,7 +42,15 @@ Este documento define qué se considera terminado en la implementación de refer
 [x] Traceability
 [x] Visualizer multi-scenario
 [x] Physical Repository Map
-[x] Final documentation/readme polish
+[x] CI con GitHub Actions
+[x] Continuous Delivery con GitHub Release
+[x] START_HERE / Learning Path
+[x] CHEATSHEET
+[x] Guided Tours
+[x] Anti-patterns
+[x] Exercises
+[x] Hexagonal vs .NET / ASP.NET Core / EF Core
+[x] Visualizer progressive navigation guide
 ```
 
 ---
@@ -73,7 +89,7 @@ Persistence
 
 ## Estado de tests
 
-La suite actual contiene `77` tests declarados:
+La suite contiene `77` tests:
 
 ```text
 Domain                  15
@@ -86,11 +102,100 @@ Architecture            20
 Total                   77
 ```
 
-Antes del tag final deben ejecutarse localmente y pasar todos.
+La etapa Educational Experience modifica documentación, no comportamiento productivo.
+
+Aun así, cualquier cambio debe volver a ejecutar la validación completa para comprobar que el repositorio continúa íntegro.
 
 ---
 
-## Qué queda fuera de v1.0.0
+## DevOps actual
+
+### Continuous Integration
+
+Pull Requests hacia `main` ejecutan:
+
+```text
+restore
+build
+77 tests
+architecture validation
+EF pending-model validation
+Visualizer build
+```
+
+### Continuous Delivery
+
+Tags versionados disparan:
+
+```text
+build
+tests
+publish API
+publish Worker
+publish Visualizer
+package artifacts
+GitHub Release
+```
+
+Continuous Deployment a un proveedor cloud no forma parte del estado final.
+
+---
+
+## Educational Experience
+
+La entrada recomendada ahora es:
+
+```text
+START_HERE
+    ↓
+MinimalExample
+    ↓
+CHEATSHEET
+    ↓
+Visualizer por capas
+    ↓
+Guided Tours
+    ↓
+Architecture docs
+    ↓
+Anti-patterns / Exercises
+```
+
+La nueva documentación reutiliza:
+
+```text
+HowToReadThisImplementation
+architecture/README
+traceability/
+ADRs
+Visualizer
+```
+
+en lugar de reemplazarlos.
+
+---
+
+## Visualizer
+
+El Visualizer continúa siendo una herramienta educativa aislada del código productivo.
+
+Capacidades principales:
+
+```text
+Execution Flow
+runtime/dependency distinction
+real source snippets
+Repository Map
+Active Source Path
+Zoom / Focus / Follow
+click + drag navigation
+```
+
+No es runtime tracing real.
+
+---
+
+## Qué queda fuera del alcance actual
 
 No es deuda necesaria para considerar terminado el laboratorio:
 
@@ -99,85 +204,56 @@ runtime telemetry/tracing real
 OpenTelemetry
 SignalR para streaming de eventos
 PostgreSQL/Neon
-Docker/Cloud deployment
-CI/CD
+Continuous Deployment / cloud hosting
 Authentication/Authorization
 segunda implementación en otro lenguaje
 ```
 
-Estas son extensiones opcionales.
+Son extensiones opcionales.
 
 ---
 
-## Limitación conocida del Visualizer
+## Checklist de validación
 
-El click-and-drag del runtime canvas no se considera funcionalidad garantizada.
-
-Alternativas disponibles:
-
-```text
-scroll
-zoom
-focus
-follow
-selección directa de nodos
-```
-
-No bloquea ningún objetivo educativo del proyecto.
-
----
-
-## Release checklist
-
-En la rama de feature:
+Desde `implementations/dotnet`:
 
 ```text
 [ ] dotnet tool restore
-[ ] dotnet build
-[ ] dotnet test → 77 passed
+[ ] dotnet restore
+[ ] dotnet build Grounded.Hexagonal.slnx --configuration Release
+[ ] dotnet test Grounded.Hexagonal.slnx --configuration Release --no-build
+[ ] 77 tests passed
 [ ] EF model sin pending model changes
-[ ] Host.Api arranca
-[ ] Visualizer arranca
+[ ] Visualizer restore/build
 [ ] CraftItem funciona visualmente
 [ ] GetInventory funciona visualmente
 [ ] ProcessFoodSpoilage funciona visualmente
 [ ] Repository Map funciona
+[ ] links principales de START_HERE revisados
 [ ] git status revisado
-```
-
-Después:
-
-```text
-feature/hexagonal-visualizer
-        ↓ Pull Request
-main
-        ↓
-v1.0.0
-```
-
----
-
-## Comandos después del merge
-
-```powershell
-git checkout main
-git pull
-
-git tag -a v1.0.0 -m "Hexagonal Architecture .NET reference implementation"
-git push origin v1.0.0
 ```
 
 ---
 
 ## Próximo paso educativo recomendado
 
-No agregar más infraestructura a esta implementación.
+No agregar infraestructura sólo por agregarla.
 
-La comparación de mayor valor sería implementar la misma specification en una tecnología distinta y responder:
+A partir de aquí hay dos rutas con valor:
+
+```text
+usar START_HERE + Exercises para practicar el diseño
+```
+
+o, más adelante:
+
+```text
+implementar la misma specification en otra tecnología
+```
+
+La segunda ruta permite responder con evidencia:
 
 ```text
 ¿Qué cambió por el lenguaje/framework?
 ¿Qué permaneció igual por la arquitectura?
 ```
-
-Ese contraste es la siguiente evidencia fuerte de que Hexagonal Architecture no depende de .NET.

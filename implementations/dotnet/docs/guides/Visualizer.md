@@ -24,6 +24,106 @@ dotnet run --project tools\Grounded.Hexagonal.Visualizer --launch-profile http
 
 ---
 
+## Cómo usarlo sin entrar de golpe a todos los detalles
+
+El Visualizer ya contiene la información necesaria para una lectura progresiva. No hace falta agregar otro modo ni duplicar metadata.
+
+La recomendación es recorrerlo en cuatro pases.
+
+### Pase 1 — capas y roles
+
+Selecciona `CraftItem`.
+
+Ignora snippets, payloads y nombres concretos.
+
+Mira únicamente:
+
+```text
+Inbound Adapter
+Input Port
+Application
+Domain
+Output Port
+Outbound Adapter
+```
+
+Pregunta:
+
+> ¿Qué responsabilidad tiene cada etapa?
+
+### Pase 2 — Ports y Adapters
+
+Repite el flujo y ahora observa las transiciones:
+
+```text
+CraftItemEndpoint
+    ↓
+ICraftItemUseCase
+    ↓
+CraftItemHandler
+    ↓
+Inventory.Craft
+    ↓
+IInventoryRepository
+    ↓
+adapter concreto
+```
+
+Pregunta:
+
+> ¿Dónde termina el core y dónde empiezan los mecanismos externos?
+
+### Pase 3 — componentes y casos de uso
+
+Compara los tres escenarios:
+
+```text
+CraftItem
+GetInventory
+ProcessFoodSpoilage
+```
+
+Busca:
+
+```text
+qué los inicia
+si mutan estado
+qué output ports necesitan
+qué permanece igual entre HTTP y Worker
+```
+
+### Pase 4 — clases, archivos y snippets
+
+Activa la lectura detallada:
+
+```text
+source file
+real line numbers
+code snippet
+Active Source Path
+Repository Map
+```
+
+Ahora ya no estás intentando aprender arquitectura y estructura física al mismo tiempo: estás conectando un modelo mental previo con el C# real.
+
+Esta secuencia corresponde a:
+
+```text
+capas
+  ↓
+Ports / Adapters
+  ↓
+componentes / casos de uso
+  ↓
+clases / snippets
+```
+
+Ruta completa para principiantes:
+
+[`../../START_HERE.md`](../../START_HERE.md)
+
+---
+
 ## Modo 1 — Execution Flow
 
 Permite reproducir:
@@ -195,10 +295,9 @@ HTTP JSON
 
 El canvas permite navegar mediante **click + drag** para desplazarse horizontalmente por el mapa del flujo.
 
-Esta interacción complementa los demás controles disponibles:
+Esta interacción complementa:
 
 ```text
-click + drag
 scroll del canvas
 Zoom
 Focus
@@ -234,4 +333,4 @@ SignalR / streaming
 visualización de una request real
 ```
 
-Eso se considera fuera del alcance `v1.0.0`, porque el laboratorio actual estudia Arquitectura Hexagonal, no observabilidad distribuida.
+Eso continúa fuera del alcance del laboratorio actual, porque el objetivo es estudiar Arquitectura Hexagonal, no observabilidad distribuida.
