@@ -4,6 +4,10 @@ Esta carpeta documenta cómo la arquitectura y la specification común se materi
 
 No reemplaza la documentación conceptual ni la specification independiente del lenguaje.
 
+Si eres nuevo en el tema, no empieces recorriendo esta carpeta al azar:
+
+[`../START_HERE.md`](../START_HERE.md)
+
 ---
 
 ## Índice
@@ -11,11 +15,16 @@ No reemplaza la documentación conceptual ni la specification independiente del 
 ```text
 docs/
 ├── architecture/
-│   └── README.md
+│   ├── README.md
+│   └── HexagonalVsDotNet.md
 │
 ├── guides/
 │   ├── README.md
+│   ├── MinimalExample.md
 │   ├── HowToReadThisImplementation.md
+│   ├── GuidedTours.md
+│   ├── AntiPatterns.md
+│   ├── Exercises.md
 │   ├── RunAndValidate.md
 │   ├── SQLiteDemo.md
 │   └── Visualizer.md
@@ -35,22 +44,44 @@ docs/
 
 ## Por dónde empezar
 
-Si quieres **entender la arquitectura**:
+### Soy nuevo
 
-1. [`architecture/README.md`](architecture/README.md)
-2. [`guides/HowToReadThisImplementation.md`](guides/HowToReadThisImplementation.md)
-3. Visualizer
-4. ADRs y traceability según aparezcan dudas concretas
+```text
+START_HERE
+→ MinimalExample
+→ CHEATSHEET
+→ Visualizer por capas
+→ GuidedTours
+```
 
-Si quieres **ejecutar el proyecto**:
+Enlaces:
 
-1. [`guides/RunAndValidate.md`](guides/RunAndValidate.md)
-2. [`guides/SQLiteDemo.md`](guides/SQLiteDemo.md)
-3. [`guides/Visualizer.md`](guides/Visualizer.md)
+- [`../START_HERE.md`](../START_HERE.md)
+- [`../CHEATSHEET.md`](../CHEATSHEET.md)
+- [`guides/MinimalExample.md`](guides/MinimalExample.md)
+- [`guides/GuidedTours.md`](guides/GuidedTours.md)
 
-Si quieres **cerrar/releasear la implementación**:
+### Ya conozco Arquitectura Hexagonal
 
-1. [`FINAL_STATUS.md`](FINAL_STATUS.md)
+Empieza por:
+
+- [`architecture/README.md`](architecture/README.md)
+- [`architecture/HexagonalVsDotNet.md`](architecture/HexagonalVsDotNet.md)
+- [`traceability/`](traceability/)
+- [`adr/`](adr/)
+
+### Quiero ejecutar el proyecto
+
+Empieza por:
+
+- [`guides/RunAndValidate.md`](guides/RunAndValidate.md)
+- [`guides/SQLiteDemo.md`](guides/SQLiteDemo.md)
+- [`guides/Visualizer.md`](guides/Visualizer.md)
+
+### Quiero practicar o revisar errores comunes
+
+- [`guides/AntiPatterns.md`](guides/AntiPatterns.md)
+- [`guides/Exercises.md`](guides/Exercises.md)
 
 ---
 
@@ -67,7 +98,7 @@ Application
 Ports
 Adapters
 Composition Roots
-Hexagonal vs .NET
+Hexagonal vs .NET / ASP.NET Core / EF Core
 ```
 
 ---
@@ -77,6 +108,16 @@ Hexagonal vs .NET
 Contiene procedimientos educativos y operativos.
 
 No define reglas arquitectónicas nuevas.
+
+Los Guided Tours no reemplazan `traceability/`:
+
+```text
+Guided Tours
+    orden de lectura del flujo
+
+Traceability
+    Architecture ID → C# → tests
+```
 
 ---
 
